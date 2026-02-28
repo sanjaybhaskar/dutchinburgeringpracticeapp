@@ -6,6 +6,14 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — Mobile UX: compact header + no word tooltip overlay:**
+  - [x] Header controls hidden behind ⚙️ toggle on mobile; desktop shows full controls row unchanged
+  - [x] Mobile always-visible action bar: ← / → navigation, Play/Stop, level badge + topic emoji
+  - [x] Collapsible settings panel (level, topic, speed) slides open on ⚙️ tap; auto-closes on selection
+  - [x] Title row: About toggle (left), title (center), ⚙️ (right) — compact 3-column layout
+  - [x] Removed `title` tooltip attribute from word `<span>` — no more browser native tooltip overlay on word hover/click
+  - [x] Word translation still routes to bottom sheet (mobile) / sidebar (desktop) via `selectedWord` state
+
 - [x] **Update (Feb 2026) — Mobile translation UX fix (fixed bottom sheet):**
   - [x] Translation panel no longer placed permanently at the bottom on mobile (avoids scroll-after-every-click problem)
   - [x] On mobile (`< lg`): translation panel renders as a **fixed bottom sheet** that slides up (`translate-y-0`) when a sentence/word is selected, and slides away (`translate-y-full`) when dismissed

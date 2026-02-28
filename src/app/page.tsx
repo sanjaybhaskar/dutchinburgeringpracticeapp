@@ -77,6 +77,7 @@ function getAllSentences(story: Story): Sentence[] {
 
 export default function Home() {
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Story history cache: array of fetched stories; currentIndex points to the active one
   const [storyHistory, setStoryHistory] = useState<Story[]>([]);
@@ -411,21 +412,152 @@ export default function Home() {
     <main className={`min-h-screen bg-neutral-900 text-white ${selectedSentence ? 'pb-[55vh] lg:pb-0' : ''}`}>
       {/* Header */}
       <header className="bg-neutral-800 border-b border-neutral-700 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold">🇳🇱 Dutch Inburgering Practice</h1>
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: About toggle (mobile) */}
             <button
               onClick={() => setAboutOpen((v) => !v)}
-              className="text-xs px-2.5 py-1 rounded-full border border-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-400 transition-colors flex items-center gap-1"
+              className="text-xs px-2 py-1 rounded-full border border-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-400 transition-colors flex items-center gap-1 shrink-0"
               aria-expanded={aboutOpen}
             >
               <span>{aboutOpen ? '▲' : '▼'}</span>
-              About
+              <span className="hidden sm:inline">About</span>
             </button>
-          </div>
-          <p className="text-xs text-neutral-500 text-center mb-4">Civic integration exam preparation · Reading &amp; comprehension</p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
+            {/* Center: Title */}
+            <h1 className="text-lg sm:text-2xl font-bold text-center flex-1">🇳🇱 Dutch Inburgering Practice</h1>
+
+            {/* Right: Settings toggle (mobile) + always-visible nav */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* ⚙️ Settings toggle — mobile only */}
+              <button
+                onClick={() => setSettingsOpen((v) => !v)}
+                className="lg:hidden text-xs px-2 py-1 rounded-full border border-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-400 transition-colors flex items-center gap-1"
+                aria-expanded={settingsOpen}
+                aria-label="Toggle settings"
+              >
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-neutral-500 text-center mt-0.5 mb-2 hidden sm:block">Civic integration exam preparation · Reading &amp; comprehension</p>
+
+          {/* Mobile: compact action bar (always visible) */}
+          <div className="flex items-center justify-between gap-2 mt-2 lg:hidden">
+            {/* Prev / Next */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handlePrev}
+                disabled={loading || currentIndex <= 0}
+                className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-l-lg text-sm font-medium transition-colors border-r border-neutral-600"
+              >
+                ←
+              </button>
+              <span className="bg-neutral-700 px-2 py-1.5 text-xs text-neutral-400 select-none">
+                {storyHistory.length === 0 ? '—' : `${currentIndex + 1}/${storyHistory.length}`}
+              </span>
+              <button
+                onClick={handleNext}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-r-lg text-sm font-medium transition-colors"
+              >
+                →
+              </button>
+            </div>
+
+            {/* Play / Stop */}
+            {story && (
+              isPlayingStory ? (
+                <button
+                  onClick={handleStop}
+                  className="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  <span>⏹</span>
+                  <span>Stop</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handlePlayStory}
+                  disabled={loading}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                >
+                  <span>▶️</span>
+                  <span>Play</span>
+                </button>
+              )
+            )}
+
+            {/* Level badge (read-only summary, tap ⚙️ to change) */}
+            <div className="flex items-center gap-1">
+              <span className={`text-xs px-2 py-1 rounded font-medium ${
+                level === 'A1' ? 'bg-green-900/60 text-green-400' :
+                level === 'A2' ? 'bg-blue-900/60 text-blue-400' :
+                level === 'B1' ? 'bg-orange-900/60 text-orange-400' :
+                'bg-red-900/60 text-red-400'
+              }`}>{level}</span>
+              <span className="text-xs text-neutral-500 truncate max-w-[80px]">
+                {TOPICS.find((t) => t.value === topic)?.emoji}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile: collapsible settings panel */}
+          {settingsOpen && (
+            <div className="lg:hidden mt-3 pt-3 border-t border-neutral-700 space-y-3">
+              {/* Level */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 w-12 shrink-0">Level:</span>
+                <div className="flex rounded-lg overflow-hidden border border-neutral-600">
+                  {(['A1', 'A2', 'B1', 'B2'] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => { handleLevelChange(l); setSettingsOpen(false); }}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                        level === l ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Topic */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 w-12 shrink-0">Topic:</span>
+                <select
+                  value={topic}
+                  onChange={(e) => { handleTopicChange(e.target.value as StoryTopic); setSettingsOpen(false); }}
+                  className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
+                >
+                  {TOPICS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.emoji} {t.label}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Speed */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 w-12 shrink-0">Speed:</span>
+                <div className="flex rounded-lg overflow-hidden border border-neutral-600">
+                  {(['slow', 'normal'] as PlaybackSpeed[]).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleSpeedChange(s)}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                        speed === s ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                      }`}
+                    >
+                      {s === 'slow' ? '🐢 Slow' : '🐇 Normal'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop: full controls row (always visible on lg+) */}
+          <div className="hidden lg:flex flex-wrap items-center justify-center gap-3 mt-3">
             {/* Level selector */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-400">Level:</span>
@@ -435,9 +567,7 @@ export default function Home() {
                     key={l}
                     onClick={() => handleLevelChange(l)}
                     className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                      level === l
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                      level === l ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                     }`}
                   >
                     {l}
@@ -471,9 +601,7 @@ export default function Home() {
                     key={s}
                     onClick={() => handleSpeedChange(s)}
                     className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                      speed === s
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                      speed === s ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                     }`}
                   >
                     {s === 'slow' ? '🐢 Slow' : '🐇 Normal'}
@@ -487,7 +615,6 @@ export default function Home() {
               <button
                 onClick={handlePrev}
                 disabled={loading || currentIndex <= 0}
-                title="Previous story"
                 className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:cursor-not-allowed px-3 py-1.5 rounded-l-lg text-sm font-medium transition-colors flex items-center gap-1 border-r border-neutral-600"
               >
                 ← Prev
@@ -498,7 +625,6 @@ export default function Home() {
               <button
                 onClick={handleNext}
                 disabled={loading}
-                title="Next story"
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-3 py-1.5 rounded-r-lg text-sm font-medium transition-colors flex items-center gap-1"
               >
                 Next →
@@ -1220,7 +1346,6 @@ function SentenceSpan({
               e.stopPropagation();
               onWordClick(token.text, sentence);
             }}
-            title={`Click to look up "${clean}"`}
           >
             {token.text}
           </span>
