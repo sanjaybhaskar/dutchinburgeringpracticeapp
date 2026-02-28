@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Story, Sentence, Paragraph, ComprehensionQuestion, StoryTopic, QuestionType } from './types/story';
-import { useSpeech, PlaybackSpeed, SPEED_RATES } from './hooks/useSpeech';
+import { useSpeech, PlaybackSpeed, SPEED_RATES, SPEED_LABELS } from './hooks/useSpeech';
 import { tokenizeSentence, stripPunctuation } from './lib/tokenize';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ export default function Home() {
   const [progress, setProgress] = useState<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
   const progressRef = useRef<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
 
-  const { speak, playSequence, stop, isSpeaking, isPlayingStory, isSupported } = useSpeech();
+  const { speak, playSequence, stop, isSpeaking, isPlayingStory, isSupported, dutchVoices, selectedVoice, setSelectedVoice } = useSpeech();
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -540,19 +540,40 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-neutral-400 w-12 shrink-0">Speed:</span>
                 <div className="flex rounded-lg overflow-hidden border border-neutral-600">
-                  {(['slow', 'normal'] as PlaybackSpeed[]).map((s) => (
+                  {(['verySlow', 'slow', 'normal', 'fast'] as PlaybackSpeed[]).map((s) => (
                     <button
                       key={s}
                       onClick={() => handleSpeedChange(s)}
-                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                      className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
                         speed === s ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                       }`}
                     >
-                      {s === 'slow' ? '🐢 Slow' : '🐇 Normal'}
+                      {SPEED_LABELS[s]}
                     </button>
                   ))}
                 </div>
               </div>
+              {/* Voice */}
+              {dutchVoices.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400 w-12 shrink-0">Voice:</span>
+                  <select
+                    value={selectedVoice?.name ?? ''}
+                    onChange={(e) => {
+                      const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
+                      setSelectedVoice(v);
+                    }}
+                    className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
+                  >
+                    {dutchVoices.map((v) => (
+                      <option key={v.name} value={v.name}>
+                        {v.name.replace(/Microsoft |Google |Apple /, '')}
+                        {v.localService ? '' : ' ☁️'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
@@ -596,7 +617,7 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-400">Speed:</span>
               <div className="flex rounded-lg overflow-hidden border border-neutral-600">
-                {(['slow', 'normal'] as PlaybackSpeed[]).map((s) => (
+                {(['verySlow', 'slow', 'normal', 'fast'] as PlaybackSpeed[]).map((s) => (
                   <button
                     key={s}
                     onClick={() => handleSpeedChange(s)}
@@ -604,11 +625,33 @@ export default function Home() {
                       speed === s ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                     }`}
                   >
-                    {s === 'slow' ? '🐢 Slow' : '🐇 Normal'}
+                    {SPEED_LABELS[s]}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Voice selector */}
+            {dutchVoices.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-400">Voice:</span>
+                <select
+                  value={selectedVoice?.name ?? ''}
+                  onChange={(e) => {
+                    const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
+                    setSelectedVoice(v);
+                  }}
+                  className="bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600 max-w-[200px]"
+                >
+                  {dutchVoices.map((v) => (
+                    <option key={v.name} value={v.name}>
+                      {v.name.replace(/Microsoft |Google |Apple /, '')}
+                      {v.localService ? '' : ' ☁️'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Prev / Next navigation */}
             <div className="flex items-center gap-1">
@@ -1010,7 +1053,7 @@ export default function Home() {
               <p className="text-xs text-neutral-400 leading-relaxed">
                 After clicking a sentence, click any individual <strong className="text-neutral-300">word</strong>{' '}
                 to get its Dutch → English translation in the side panel. Use{' '}
-                <strong className="text-neutral-300">🐢 Slow</strong> speed if you need more time.
+                <strong className="text-neutral-300">0.6× or 0.8×</strong> speed if you need more time.
               </p>
             </div>
             <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">

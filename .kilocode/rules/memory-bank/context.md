@@ -6,6 +6,16 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — Improved TTS quality: smart voice selection + expanded speed options + voice picker:**
+  - [x] `useSpeech.ts` — `scoreVoice()` ranks Dutch voices by quality: neural > enhanced > standard; prefers Microsoft Edge neural voices (Colette, Fenna, Maarten), Google, Apple; penalizes compact voices
+  - [x] `getDutchVoices()` exported helper — returns all Dutch voices sorted by quality score
+  - [x] Auto-selects best Dutch voice on load; user can override via voice selector dropdown
+  - [x] `selectedVoice` / `setSelectedVoice` state exposed from hook; voice passed to all `speak()` and `playSequence()` calls
+  - [x] Speed options expanded: `verySlow` (0.6×) / `slow` (0.8×) / `normal` (1.0×) / `fast` (1.2×) — was just slow/normal
+  - [x] `SPEED_LABELS` exported for UI display
+  - [x] Voice selector dropdown added to both mobile ⚙️ settings panel and desktop controls row
+  - [x] Voice names cleaned up in UI (strips "Microsoft /Google /Apple " prefix); remote voices marked with ☁️
+
 - [x] **Update (Feb 2026) — Mobile UX: compact header + no word tooltip overlay:**
   - [x] Header controls hidden behind ⚙️ toggle on mobile; desktop shows full controls row unchanged
   - [x] Mobile always-visible action bar: ← / → navigation, Play/Stop, level badge + topic emoji

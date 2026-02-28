@@ -9,29 +9,110 @@ export interface SpeechOptions {
   voice?: SpeechSynthesisVoice | null;
 }
 
-export type PlaybackSpeed = 'slow' | 'normal';
+export type PlaybackSpeed = 'verySlow' | 'slow' | 'normal' | 'fast';
 
 export const SPEED_RATES: Record<PlaybackSpeed, number> = {
-  slow: 0.6,
-  normal: 0.9,
+  verySlow: 0.6,
+  slow: 0.8,
+  normal: 1.0,
+  fast: 1.2,
+};
+
+export const SPEED_LABELS: Record<PlaybackSpeed, string> = {
+  verySlow: '0.6×',
+  slow: '0.8×',
+  normal: '1.0×',
+  fast: '1.2×',
 };
 
 // Initialize outside component to avoid effect
 const isSpeechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
+/**
+ * Score a voice for Dutch TTS quality.
+ * Higher score = better quality / more preferred.
+ */
+function scoreVoice(voice: SpeechSynthesisVoice): number {
+  let score = 0;
+  const name = voice.name.toLowerCase();
+  const lang = voice.lang.toLowerCase();
+
+  // Must be Dutch
+  if (!lang.startsWith('nl')) return -1;
+
+  // Prefer nl-NL over nl-BE
+  if (lang === 'nl-nl') score += 10;
+  else if (lang.startsWith('nl')) score += 5;
+
+  // Neural / AI voices (highest quality)
+  if (name.includes('neural')) score += 50;
+  if (name.includes('natural')) score += 40;
+
+  // Microsoft Edge neural voices (excellent quality)
+  if (name.includes('microsoft') && name.includes('neural')) score += 60;
+  if (name.includes('colette')) score += 55; // Microsoft Colette Neural (nl-NL)
+  if (name.includes('fenna')) score += 54;   // Microsoft Fenna Neural (nl-NL)
+  if (name.includes('maarten')) score += 53; // Microsoft Maarten Neural (nl-NL)
+  if (name.includes('dena')) score += 52;    // Microsoft Dena Neural (nl-BE)
+
+  // Google voices (good quality on Chrome/Android)
+  if (name.includes('google')) score += 30;
+
+  // Apple voices (good quality on Safari/macOS/iOS)
+  if (name.includes('xander')) score += 28; // macOS Dutch voice
+  if (name.includes('claire')) score += 27; // macOS Dutch voice
+
+  // Enhanced / premium voices
+  if (name.includes('enhanced')) score += 20;
+  if (name.includes('premium')) score += 25;
+
+  // Compact / basic voices (lower quality)
+  if (name.includes('compact')) score -= 10;
+
+  // Local voices are generally more reliable than remote
+  if (voice.localService) score += 5;
+
+  return score;
+}
+
+/**
+ * Get Dutch voices sorted by quality (best first).
+ */
+export function getDutchVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  return voices
+    .filter((v) => v.lang.toLowerCase().startsWith('nl'))
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
+}
+
+/**
+ * Pick the best available Dutch voice.
+ */
+function pickBestDutchVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const dutch = getDutchVoices(voices);
+  return dutch[0] ?? null;
+}
+
 export function useSpeech() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPlayingStory, setIsPlayingStory] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   // Ref to track if story playback should continue
   const storyPlaybackRef = useRef<{ active: boolean; index: number }>({ active: false, index: 0 });
 
   useEffect(() => {
-    // Get available voices
+    if (!isSpeechSupported) return;
+
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
+
+      // Auto-select best Dutch voice if none selected yet
+      setSelectedVoice((prev) => {
+        if (prev) return prev; // keep user's choice
+        return pickBestDutchVoice(availableVoices);
+      });
     };
 
     loadVoices();
@@ -43,6 +124,9 @@ export function useSpeech() {
       window.speechSynthesis.cancel();
     };
   }, []);
+
+  /** Derived: Dutch voices sorted by quality */
+  const dutchVoices = getDutchVoices(voices);
 
   /** Speak a single text snippet */
   const speak = useCallback(
@@ -56,13 +140,12 @@ export function useSpeech() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = options.lang || 'nl-NL';
       utterance.rate = options.rate ?? SPEED_RATES.normal;
-      utterance.pitch = options.pitch || 1;
+      utterance.pitch = options.pitch ?? 1;
 
-      if (options.voice) {
-        utterance.voice = options.voice;
-      } else {
-        const dutchVoice = voices.find((v) => v.lang.startsWith('nl'));
-        if (dutchVoice) utterance.voice = dutchVoice;
+      // Voice priority: explicit option > user-selected > auto-best
+      const voiceToUse = options.voice !== undefined ? options.voice : selectedVoice;
+      if (voiceToUse) {
+        utterance.voice = voiceToUse;
       }
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -72,7 +155,7 @@ export function useSpeech() {
       utteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     },
-    [voices]
+    [selectedVoice]
   );
 
   /**
@@ -98,7 +181,8 @@ export function useSpeech() {
       storyPlaybackRef.current = playbackState;
       setIsPlayingStory(true);
 
-      const dutchVoice = voices.find((v) => v.lang.startsWith('nl')) ?? null;
+      // Voice priority: explicit option > user-selected > auto-best
+      const voiceToUse = options.voice !== undefined ? options.voice : selectedVoice;
 
       const speakNext = (index: number) => {
         // Check if playback was cancelled
@@ -114,12 +198,10 @@ export function useSpeech() {
         const utterance = new SpeechSynthesisUtterance(texts[index]);
         utterance.lang = options.lang || 'nl-NL';
         utterance.rate = options.rate ?? SPEED_RATES.normal;
-        utterance.pitch = options.pitch || 1;
+        utterance.pitch = options.pitch ?? 1;
 
-        if (options.voice) {
-          utterance.voice = options.voice;
-        } else if (dutchVoice) {
-          utterance.voice = dutchVoice;
+        if (voiceToUse) {
+          utterance.voice = voiceToUse;
         }
 
         utterance.onstart = () => setIsSpeaking(true);
@@ -143,7 +225,7 @@ export function useSpeech() {
 
       speakNext(0);
     },
-    [voices]
+    [selectedVoice]
   );
 
   const stop = useCallback(() => {
@@ -162,5 +244,8 @@ export function useSpeech() {
     isPlayingStory,
     isSupported: isSpeechSupported,
     voices,
+    dutchVoices,
+    selectedVoice,
+    setSelectedVoice,
   };
 }
