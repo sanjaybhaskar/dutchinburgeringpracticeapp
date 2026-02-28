@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Story, ComprehensionQuestion, QuestionType, StoryTopic } from '@/app/types/story';
+import { Story, StoryTopic } from '@/app/types/story';
 
 // Generate a unique ID
 function generateId(): string {
@@ -13,11 +13,9 @@ function generateId(): string {
 type RawSentence = { text: string; translation: string };
 type RawParagraph = { sentences: RawSentence[] };
 type RawQuestion = {
-  type: QuestionType;
   question: string;
   answer: string;
-  options?: string[];
-  correctBool?: boolean;
+  options: string[];
 };
 type RawStory = {
   title: string;
@@ -87,26 +85,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Hoe laat staat de persoon op?',
         answer: 'Om zeven uur.',
         options: ['Om zes uur.', 'Om zeven uur.', 'Om acht uur.', 'Om negen uur.'],
       },
       {
-        type: 'true_false',
-        question: 'De persoon gaat met de auto naar zijn werk.',
-        answer: 'Onwaar. De persoon gaat op de fiets naar zijn werk.',
-        correctBool: false,
+        question: 'Hoe gaat de persoon naar zijn werk?',
+        answer: 'Op de fiets.',
+        options: ['Met de auto.', 'Met de bus.', 'Op de fiets.', 'Met de trein.'],
       },
       {
-        type: 'fill_blank',
-        question: 'De persoon eet twee boterhammen met ___ voor ontbijt.',
-        answer: 'kaas',
+        question: 'Wat eet de persoon voor ontbijt?',
+        answer: 'Twee boterhammen met kaas.',
+        options: ['Twee boterhammen met kaas.', 'Yoghurt met fruit.', 'Cornflakes met melk.', 'Een ei met toast.'],
       },
       {
-        type: 'open',
+        question: 'Wat eet de persoon voor lunch?',
+        answer: 'Een broodje met ham en sla.',
+        options: ['Een broodje met kaas.', 'Een broodje met ham en sla.', 'Een salade.', 'Soep.'],
+      },
+      {
         question: 'Wat doet de persoon na het avondeten?',
-        answer: 'Na het avondeten kijkt de persoon televisie of leest een boek.',
+        answer: 'Televisie kijken of een boek lezen.',
+        options: ['Sporten.', 'Televisie kijken of een boek lezen.', 'Naar vrienden gaan.', 'Muziek luisteren.'],
       },
     ],
   },
@@ -167,26 +168,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Wanneer gaat de persoon naar de markt?',
         answer: 'Elke zaterdag.',
         options: ['Elke vrijdag.', 'Elke zaterdag.', 'Elke zondag.', 'Elke maandag.'],
       },
       {
-        type: 'true_false',
-        question: 'De persoon gaat vroeg naar de markt omdat het dan niet zo druk is.',
-        answer: 'Waar. De persoon gaat vroeg omdat het dan niet zo druk is.',
-        correctBool: true,
+        question: 'Waarom gaat de persoon vroeg naar de markt?',
+        answer: 'Omdat het dan niet zo druk is.',
+        options: ['Omdat de prijzen dan lager zijn.', 'Omdat het dan niet zo druk is.', 'Omdat de markt vroeg sluit.', 'Omdat hij daarna moet werken.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Bij de kaasboer koopt de persoon een stuk oude kaas en een stuk ___ kaas.',
-        answer: 'jonge',
+        question: 'Wat koopt de persoon bij de kaasboer?',
+        answer: 'Een stuk oude kaas en een stuk jonge kaas.',
+        options: ['Alleen oude kaas.', 'Alleen jonge kaas.', 'Een stuk oude kaas en een stuk jonge kaas.', 'Brie en camembert.'],
       },
       {
-        type: 'open',
         question: 'Wat koopt de persoon bij de bakker?',
-        answer: 'De persoon koopt een brood en twee croissants.',
+        answer: 'Een brood en twee croissants.',
+        options: ['Twee broden.', 'Een brood en twee croissants.', 'Drie croissants.', 'Een taart.'],
+      },
+      {
+        question: 'Wat vindt de persoon van de markt?',
+        answer: 'Het is zijn favoriete plek op zaterdag.',
+        options: ['Het is te duur.', 'Het is zijn favoriete plek op zaterdag.', 'Het is te druk.', 'Het is saai.'],
       },
     ],
   },
@@ -247,26 +251,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Wanneer is het Sinterklaasfeest?',
         answer: 'Op vijf december.',
         options: ['Op vijf november.', 'Op vijf december.', 'Op vijfentwintig december.', 'Op zes januari.'],
       },
       {
-        type: 'true_false',
-        question: 'Sinterklaas komt uit Engeland op een stoomboot.',
-        answer: 'Onwaar. Sinterklaas komt uit Spanje op een stoomboot.',
-        correctBool: false,
+        question: 'Waar komt Sinterklaas vandaan?',
+        answer: 'Uit Spanje.',
+        options: ['Uit Engeland.', 'Uit Spanje.', 'Uit Duitsland.', 'Uit België.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Kinderen zetten hun ___ bij de open haard.',
-        answer: 'schoen',
+        question: 'Wat zetten kinderen bij de open haard?',
+        answer: 'Hun schoen.',
+        options: ['Hun sok.', 'Hun schoen.', 'Een mand.', 'Een zak.'],
       },
       {
-        type: 'open',
         question: 'Wat zijn typische Sinterklaas-lekkernijen?',
-        answer: 'Typische Sinterklaas-lekkernijen zijn pepernoten en speculaas.',
+        answer: 'Pepernoten en speculaas.',
+        options: ['Oliebollen en appeltaart.', 'Pepernoten en speculaas.', 'Stroopwafels en drop.', 'Chocolade en snoep.'],
+      },
+      {
+        question: 'Wat hoort er bij elk cadeau op Sinterklaasavond?',
+        answer: 'Een gedicht.',
+        options: ['Een kaart.', 'Een gedicht.', 'Een brief.', 'Een lied.'],
       },
     ],
   },
@@ -330,26 +337,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Hoe is de persoon naar Amsterdam gereisd?',
         answer: 'Met de trein vanuit Utrecht.',
         options: ['Met de bus vanuit Den Haag.', 'Met de trein vanuit Utrecht.', 'Met de auto vanuit Rotterdam.', 'Met de fiets vanuit Haarlem.'],
       },
       {
-        type: 'fill_blank',
-        question: 'De persoon heeft de ___ van Rembrandt gezien in het Rijksmuseum.',
-        answer: 'Nachtwacht',
+        question: 'Welk schilderij heeft de persoon gezien in het Rijksmuseum?',
+        answer: 'De Nachtwacht van Rembrandt.',
+        options: ['Het Melkmeisje van Vermeer.', 'De Nachtwacht van Rembrandt.', 'De Zonnebloemen van Van Gogh.', 'De Aardappeleters van Van Gogh.'],
       },
       {
-        type: 'true_false',
-        question: 'Een kroket is een typisch Nederlands snack gevuld met ragout.',
-        answer: 'Waar. Een kroket is een gefrituurde rol gevuld met ragout.',
-        correctBool: true,
+        question: 'Wat is een kroket?',
+        answer: 'Een gefrituurde rol gevuld met ragout.',
+        options: ['Een soort kaas.', 'Een gefrituurde rol gevuld met ragout.', 'Een broodje met vlees.', 'Een soort koekje.'],
       },
       {
-        type: 'open',
         question: 'Waarom staan sommige grachtenpanden scheef?',
-        answer: 'Sommige grachtenpanden staan scheef omdat ze op houten palen staan.',
+        answer: 'Omdat ze op houten palen staan.',
+        options: ['Omdat ze oud zijn.', 'Omdat ze op houten palen staan.', 'Omdat de grond zacht is.', 'Omdat ze slecht gebouwd zijn.'],
+      },
+      {
+        question: 'Waar heeft de persoon gegeten op zaterdagavond?',
+        answer: 'In een Indonesisch restaurant in de Jordaan.',
+        options: ['In een Frans restaurant.', 'In een Indonesisch restaurant in de Jordaan.', 'In een café bij de gracht.', 'In het hotel.'],
       },
     ],
   },
@@ -410,26 +420,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Wanneer is Koningsdag?',
         answer: 'Op 27 april.',
         options: ['Op 30 april.', 'Op 27 april.', 'Op 5 mei.', 'Op 15 augustus.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Op de vrijmarkt mogen mensen hun oude ___ verkopen.',
-        answer: 'spullen',
+        question: 'Wat is de vrijmarkt?',
+        answer: 'Een markt waar mensen hun oude spullen mogen verkopen.',
+        options: ['Een gratis markt met cadeaus.', 'Een markt waar mensen hun oude spullen mogen verkopen.', 'Een markt alleen voor kinderen.', 'Een markt met alleen voedsel.'],
       },
       {
-        type: 'true_false',
-        question: 'Het feest heette vroeger Koninginnedag.',
-        answer: 'Waar. Vroeger heette het feest Koninginnedag.',
-        correctBool: true,
+        question: 'Hoe heette het feest vroeger?',
+        answer: 'Koninginnedag.',
+        options: ['Koningsdag.', 'Koninginnedag.', 'Prinsessedag.', 'Oranjefest.'],
       },
       {
-        type: 'open',
         question: 'Wat doet de Koninklijke Familie op Koningsdag?',
-        answer: 'De Koninklijke Familie bezoekt elk jaar een andere stad en doet mee aan spelletjes en activiteiten.',
+        answer: 'Ze bezoeken elk jaar een andere stad en doen mee aan spelletjes.',
+        options: ['Ze blijven in het paleis.', 'Ze bezoeken elk jaar een andere stad en doen mee aan spelletjes.', 'Ze geven een toespraak op televisie.', 'Ze organiseren een concert.'],
+      },
+      {
+        question: 'Wanneer veranderde de naam van Koninginnedag naar Koningsdag?',
+        answer: 'In 2013, toen Willem-Alexander Koning werd.',
+        options: ['In 2000.', 'In 2013, toen Willem-Alexander Koning werd.', 'In 2020.', 'In 1980.'],
       },
     ],
   },
@@ -492,26 +505,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Hoe laat stonden ze op om naar de markt te gaan?',
         answer: 'Om vijf uur.',
         options: ['Om drie uur.', 'Om vier uur.', 'Om vijf uur.', 'Om zes uur.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Ze verkochten tomaten, courgettes, sla en ___ op de boerenmarkt.',
-        answer: 'aardbeien',
+        question: 'Welke producten verkochten ze op de boerenmarkt?',
+        answer: 'Tomaten, courgettes, sla en aardbeien.',
+        options: ['Appels, peren en druiven.', 'Tomaten, courgettes, sla en aardbeien.', 'Kaas, brood en vlees.', 'Bloemen en planten.'],
       },
       {
-        type: 'true_false',
-        question: 'De markt was om twee uur voorbij.',
-        answer: 'Onwaar. Om één uur was de markt voorbij.',
-        correctBool: false,
+        question: 'Hoe laat was de markt voorbij?',
+        answer: 'Om één uur.',
+        options: ['Om twaalf uur.', 'Om één uur.', 'Om twee uur.', 'Om drie uur.'],
       },
       {
-        type: 'open',
         question: 'Wat leerde de verteller op de markt?',
-        answer: 'De verteller leerde hoe hij klanten moest helpen, groenten wegen en de prijs uitrekenen.',
+        answer: 'Hoe hij klanten moest helpen, groenten wegen en de prijs uitrekenen.',
+        options: ['Hoe hij groenten moest kweken.', 'Hoe hij klanten moest helpen, groenten wegen en de prijs uitrekenen.', 'Hoe hij een kraam moest bouwen.', 'Hoe hij reclame moest maken.'],
+      },
+      {
+        question: 'Wat deed de oom met de overgebleven producten?',
+        answer: 'Hij nam ze mee terug naar de boerderij.',
+        options: ['Hij gooide ze weg.', 'Hij nam ze mee terug naar de boerderij.', 'Hij gaf ze aan klanten.', 'Hij verkocht ze goedkoper.'],
       },
     ],
   },
@@ -574,26 +590,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'true_false',
-        question: 'De persoon begon met koken leren omdat hij voor het eerst alleen woonde.',
-        answer: 'Waar. De persoon begon met koken leren omdat hij voor het eerst alleen woonde.',
-        correctBool: true,
+        question: 'Waarom begon de persoon met koken leren?',
+        answer: 'Omdat hij voor het eerst alleen woonde.',
+        options: ['Omdat hij een cursus volgde.', 'Omdat hij voor het eerst alleen woonde.', 'Omdat zijn oma ziek was.', 'Omdat hij een restaurant wilde openen.'],
       },
       {
-        type: 'multiple_choice',
         question: 'Welk gerecht leerde de persoon als eerste?',
         answer: 'Stamppot.',
         options: ['Erwtensoep.', 'Stamppot.', 'Bitterballen.', 'Pannenkoeken.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Voor boerenkoolstamppot heb je aardappelen, boerenkool, rookworst en ___ nodig.',
-        answer: 'spek',
+        question: 'Welke ingrediënten heb je nodig voor boerenkoolstamppot?',
+        answer: 'Aardappelen, boerenkool, rookworst en spek.',
+        options: ['Aardappelen, wortels en uien.', 'Aardappelen, boerenkool, rookworst en spek.', 'Rijst, groenten en kip.', 'Pasta, tomatensaus en kaas.'],
       },
       {
-        type: 'open',
         question: 'Hoe maakte de persoon de stamppot romig?',
-        answer: 'De persoon voegde boter en melk toe voor een romige structuur.',
+        answer: 'Door boter en melk toe te voegen.',
+        options: ['Door room toe te voegen.', 'Door boter en melk toe te voegen.', 'Door kaas toe te voegen.', 'Door olie toe te voegen.'],
+      },
+      {
+        question: 'Wie gaf de persoon het recept voor stamppot?',
+        answer: 'Zijn oma.',
+        options: ['Zijn moeder.', 'Zijn oma.', 'Een kookboek.', 'Een vriend.'],
       },
     ],
   },
@@ -656,26 +675,29 @@ const STORY_POOL: RawStory[] = [
     ],
     questions: [
       {
-        type: 'multiple_choice',
         question: 'Waar gaat de persoon naartoe?',
         answer: 'Naar zijn oma in Rotterdam.',
         options: ['Naar zijn oma in Amsterdam.', 'Naar zijn oma in Rotterdam.', 'Naar zijn oma in Utrecht.', 'Naar zijn oma in Den Haag.'],
       },
       {
-        type: 'fill_blank',
-        question: 'Het treinkaartje kost ___ euro.',
-        answer: 'acht',
+        question: 'Hoeveel kost het treinkaartje?',
+        answer: 'Acht euro.',
+        options: ['Vijf euro.', 'Acht euro.', 'Tien euro.', 'Twaalf euro.'],
       },
       {
-        type: 'true_false',
-        question: 'De trein staat op spoor vier.',
-        answer: 'Waar. De trein staat op spoor vier.',
-        correctBool: true,
+        question: 'Op welk spoor staat de trein?',
+        answer: 'Spoor vier.',
+        options: ['Spoor één.', 'Spoor twee.', 'Spoor drie.', 'Spoor vier.'],
       },
       {
-        type: 'open',
         question: 'Hoe lang duurt de treinreis?',
-        answer: 'De treinreis duurt veertig minuten.',
+        answer: 'Veertig minuten.',
+        options: ['Twintig minuten.', 'Dertig minuten.', 'Veertig minuten.', 'Een uur.'],
+      },
+      {
+        question: 'Wie wacht de persoon op op het perron in Rotterdam?',
+        answer: 'Zijn oma.',
+        options: ['Zijn moeder.', 'Zijn oma.', 'Een vriend.', 'Zijn vader.'],
       },
     ],
   },
@@ -698,11 +720,10 @@ function hydrateStory(raw: RawStory): Story {
     })),
     questions: raw.questions.map((q) => ({
       id: generateId(),
-      type: q.type,
+      type: 'multiple_choice' as const,
       question: q.question,
       answer: q.answer,
-      ...(q.options ? { options: q.options } : {}),
-      ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
+      options: q.options,
     })),
   };
 }
@@ -851,10 +872,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Wat is het beroep van {name}?', answer: '{name} is {job}.', options: ['{job}', 'dokter', 'bakker', 'leraar'] },
-      { type: 'true_false', question: '{name} gaat met de auto naar het werk.', answer: 'Onwaar. {name} gaat op de fiets naar het werk.', correctBool: false },
-      { type: 'fill_blank', question: 'Vanavond maakt {name} ___.', answer: '{food}' },
-      { type: 'open', question: 'Wat doet {name} in de avond?', answer: '{name} doet aan {hobby} in de avond.' },
+      { question: 'Wat is het beroep van {name}?', answer: '{job}', options: ['{job}', 'dokter', 'bakker', 'leraar'] },
+      { question: 'Hoe gaat {name} naar het werk?', answer: 'Op de fiets.', options: ['Met de auto.', 'Met de bus.', 'Op de fiets.', 'Met de trein.'] },
+      { question: 'Wat maakt {name} vanavond voor het avondeten?', answer: '{food}', options: ['{food}', 'stamppot', 'soep', 'pasta'] },
+      { question: 'Wat doet {name} in de avond?', answer: '{hobby}', options: ['{hobby}', 'televisie kijken', 'lezen', 'sporten'] },
+      { question: 'Hoe laat gaat {name} naar bed?', answer: 'Om tien uur.', options: ['Om negen uur.', 'Om tien uur.', 'Om elf uur.', 'Om twaalf uur.'] },
     ],
   },
   // ── A1 — Travel ──────────────────────────────────────────────────────────────
@@ -904,10 +926,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Hoe reist {name} naar {city}?', answer: 'Met de trein.', options: ['Met de auto.', 'Met de trein.', 'Met het vliegtuig.', 'Op de fiets.'] },
-      { type: 'fill_blank', question: '{name} bestelt ___ in het restaurant.', answer: '{food}' },
-      { type: 'true_false', question: '{name} is al eerder in {city} geweest.', answer: 'Onwaar. Het is de eerste keer dat {name} naar {city} gaat.', correctBool: false },
-      { type: 'open', question: 'Wat koopt {name} als souvenir?', answer: '{name} koopt een klein schilderijtje als souvenir.' },
+      { question: 'Hoe reist {name} naar {city}?', answer: 'Met de trein.', options: ['Met de auto.', 'Met de trein.', 'Met het vliegtuig.', 'Op de fiets.'] },
+      { question: 'Is {name} al eerder in {city} geweest?', answer: 'Nee, het is de eerste keer.', options: ['Ja, meerdere keren.', 'Ja, één keer.', 'Nee, het is de eerste keer.', 'Dat weet hij niet meer.'] },
+      { question: 'Wat bestelt {name} in het restaurant?', answer: '{food}', options: ['{food}', 'stamppot', 'soep', 'salade'] },
+      { question: 'Wat koopt {name} als souvenir?', answer: 'Een klein schilderijtje.', options: ['Een sleutelhanger.', 'Een klein schilderijtje.', 'Een boek.', 'Een mok.'] },
+      { question: 'Hoe voelt {name} zich aan het einde van de dag?', answer: 'Moe maar gelukkig.', options: ['Blij en energiek.', 'Moe maar gelukkig.', 'Teleurgesteld.', 'Ziek.'] },
     ],
   },
   // ── A1 — Market ──────────────────────────────────────────────────────────────
@@ -957,10 +980,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Wanneer gaat {name} naar de markt?', answer: 'Op zaterdag.', options: ['Op maandag.', 'Op woensdag.', 'Op zaterdag.', 'Op zondag.'] },
-      { type: 'fill_blank', question: '{name} koopt ook een stuk ___ bij de bakker.', answer: '{food}' },
-      { type: 'true_false', question: 'De groenten op de markt zijn duur.', answer: 'Onwaar. De groenten zijn vers en goedkoop.', correctBool: false },
-      { type: 'open', question: 'Wat doet {name} na het winkelen?', answer: '{name} drinkt een kop koffie op een terrasje bij de markt.' },
+      { question: 'Wanneer gaat {name} naar de markt?', answer: 'Op zaterdag.', options: ['Op maandag.', 'Op woensdag.', 'Op zaterdag.', 'Op zondag.'] },
+      { question: 'Hoe zijn de groenten op de markt?', answer: 'Vers en goedkoop.', options: ['Duur maar vers.', 'Vers en goedkoop.', 'Goedkoop maar oud.', 'Duur en oud.'] },
+      { question: 'Wat koopt {name} bij de bakker?', answer: 'Vers brood en een stuk {food}.', options: ['Alleen brood.', 'Vers brood en een stuk {food}.', 'Koekjes en taart.', 'Croissants.'] },
+      { question: 'Wat doet {name} na het winkelen?', answer: 'Hij drinkt een kop koffie op een terrasje.', options: ['Hij gaat naar huis.', 'Hij drinkt een kop koffie op een terrasje.', 'Hij gaat lunchen.', 'Hij fietst door de stad.'] },
+      { question: 'Hoeveel kost de Goudse kaas?', answer: 'Vier euro.', options: ['Twee euro.', 'Drie euro.', 'Vier euro.', 'Vijf euro.'] },
     ],
   },
   // ── A1 — Dutch culture ───────────────────────────────────────────────────────
@@ -1010,10 +1034,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Hoe lang duurt de fietstocht van {name} naar zijn werk?', answer: 'Twintig minuten.', options: ['Tien minuten.', 'Twintig minuten.', 'Een half uur.', 'Een uur.'] },
-      { type: 'true_false', question: '{name} fietst alleen als het mooi weer is.', answer: 'Onwaar. Ook als het regent, fietst {name}.', correctBool: false },
-      { type: 'fill_blank', question: 'In het weekend fietst {name} met zijn vriend ___.', answer: '{name2}' },
-      { type: 'open', question: 'Waarom is fietsen goed?', answer: 'Fietsen is goed voor het milieu en het is ook gezond.' },
+      { question: 'Hoe lang duurt de fietstocht van {name} naar zijn werk?', answer: 'Twintig minuten.', options: ['Tien minuten.', 'Twintig minuten.', 'Een half uur.', 'Een uur.'] },
+      { question: 'Fietst {name} ook als het regent?', answer: 'Ja, hij heeft een goede regenjas.', options: ['Nee, hij neemt de bus.', 'Nee, hij blijft thuis.', 'Ja, hij heeft een goede regenjas.', 'Ja, maar hij vindt het niet leuk.'] },
+      { question: 'Met wie fietst {name} in het weekend?', answer: 'Met zijn vriend {name2}.', options: ['Alleen.', 'Met zijn familie.', 'Met zijn vriend {name2}.', 'Met collega\'s.'] },
+      { question: 'Waarom is fietsen goed?', answer: 'Het is goed voor het milieu en het is gezond.', options: ['Het is goedkoop.', 'Het is goed voor het milieu en het is gezond.', 'Het is snel.', 'Het is makkelijk.'] },
+      { question: 'Hoe ver is de fietstocht van {name} naar {city2}?', answer: 'Dertig kilometer.', options: ['Tien kilometer.', 'Twintig kilometer.', 'Dertig kilometer.', 'Veertig kilometer.'] },
     ],
   },
   // ── A2 — Daily life ──────────────────────────────────────────────────────────
@@ -1063,10 +1088,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Waarom begon {name} met {hobby}?', answer: 'Omdat hij er altijd al van had gedroomd.', options: ['Omdat zijn baas het vroeg.', 'Omdat hij er altijd al van had gedroomd.', 'Omdat het goedkoop was.', 'Omdat {name2} het ook deed.'] },
-      { type: 'true_false', question: '{name} gaf op toen {hobby} moeilijk was.', answer: 'Onwaar. {name} maakte fouten maar gaf niet op.', correctBool: false },
-      { type: 'fill_blank', question: 'Na drie maanden had {name} zijn ___.', answer: 'certificaat' },
-      { type: 'open', question: 'Wat adviseert {name} aan andere mensen?', answer: '{name} raadt iedereen aan om een nieuwe hobby te proberen.' },
+      { question: 'Waarom begon {name} met {hobby}?', answer: 'Omdat hij er altijd al van had gedroomd.', options: ['Omdat zijn baas het vroeg.', 'Omdat hij er altijd al van had gedroomd.', 'Omdat het goedkoop was.', 'Omdat {name2} het ook deed.'] },
+      { question: 'Gaf {name} op toen {hobby} moeilijk was?', answer: 'Nee, hij maakte fouten maar gaf niet op.', options: ['Ja, hij stopte meteen.', 'Ja, na een week.', 'Nee, hij maakte fouten maar gaf niet op.', 'Nee, het was nooit moeilijk.'] },
+      { question: 'Wat had {name} na drie maanden?', answer: 'Zijn certificaat.', options: ['Een nieuwe baan.', 'Zijn certificaat.', 'Een eigen studio.', 'Veel nieuwe vrienden.'] },
+      { question: 'Wat adviseert {name} aan andere mensen?', answer: 'Een nieuwe hobby proberen.', options: ['Meer werken.', 'Een nieuwe hobby proberen.', 'Meer sporten.', 'Cursussen volgen.'] },
+      { question: 'Hoeveel kostte de cursus?', answer: 'Vijftig euro.', options: ['Twintig euro.', 'Dertig euro.', 'Vijftig euro.', 'Honderd euro.'] },
     ],
   },
   // ── A2 — Travel ──────────────────────────────────────────────────────────────
@@ -1116,10 +1142,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Hoe lang duurde de reis naar {city}?', answer: 'Twee uur.', options: ['Een uur.', 'Twee uur.', 'Drie uur.', 'Vier uur.'] },
-      { type: 'fill_blank', question: 'In het restaurant bestelden ze {food} en een glas ___.', answer: 'wijn' },
-      { type: 'true_false', question: '{name} en {name2} waren teleurgesteld over het hotel.', answer: 'Onwaar. Ze waren blij met hun keuze.', correctBool: false },
-      { type: 'open', question: 'Wat deden {name} en {name2} op zaterdagavond?', answer: 'Ze gingen naar een restaurant en wandelden daarna langs de verlichte grachten.' },
+      { question: 'Hoe lang duurde de reis naar {city}?', answer: 'Twee uur.', options: ['Een uur.', 'Twee uur.', 'Drie uur.', 'Vier uur.'] },
+      { question: 'Waren {name} en {name2} tevreden over het hotel?', answer: 'Ja, ze waren blij met hun keuze.', options: ['Nee, het was te duur.', 'Nee, het was te klein.', 'Ja, ze waren blij met hun keuze.', 'Ja, maar het was ver van het centrum.'] },
+      { question: 'Wat bestelden ze in het restaurant?', answer: '{food} en een glas wijn.', options: ['{food} en bier.', '{food} en een glas wijn.', 'Soep en brood.', 'Salade en water.'] },
+      { question: 'Wat deden {name} en {name2} op zaterdagavond na het eten?', answer: 'Ze wandelden langs de verlichte grachten.', options: ['Ze gingen naar een café.', 'Ze wandelden langs de verlichte grachten.', 'Ze gingen naar een concert.', 'Ze gingen naar het hotel.'] },
+      { question: 'Wat deden ze op zondag?', answer: 'Ze bezochten een markt en kochten souvenirs.', options: ['Ze bezochten een museum.', 'Ze bezochten een markt en kochten souvenirs.', 'Ze gingen fietsen.', 'Ze bleven in het hotel.'] },
     ],
   },
   // ── A2 — Market ──────────────────────────────────────────────────────────────
@@ -1169,10 +1196,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Hoe laat opent de markt?', answer: 'Om negen uur.', options: ['Om zeven uur.', 'Om acht uur.', 'Om negen uur.', 'Om tien uur.'] },
-      { type: 'fill_blank', question: 'De tomaten kosten twee euro per ___.', answer: 'kilo' },
-      { type: 'true_false', question: '{name} werkt elke dag op de markt.', answer: 'Onwaar. {name} helpt alleen in het weekend op de markt.', correctBool: false },
-      { type: 'open', question: 'Wat doen {name} en {name2} met de overgebleven groenten?', answer: 'Ze geven de overgebleven groenten aan de voedselbank.' },
+      { question: 'Hoe laat opent de markt?', answer: 'Om negen uur.', options: ['Om zeven uur.', 'Om acht uur.', 'Om negen uur.', 'Om tien uur.'] },
+      { question: 'Hoeveel kosten de tomaten?', answer: 'Twee euro per kilo.', options: ['Één euro per kilo.', 'Twee euro per kilo.', 'Drie euro per kilo.', 'Vier euro per kilo.'] },
+      { question: 'Wanneer helpt {name} op de markt?', answer: 'In het weekend.', options: ['Elke dag.', 'Doordeweeks.', 'In het weekend.', 'Alleen op zaterdag.'] },
+      { question: 'Wat doen {name} en {name2} met de overgebleven groenten?', answer: 'Ze geven ze aan de voedselbank.', options: ['Ze gooien ze weg.', 'Ze nemen ze mee naar huis.', 'Ze geven ze aan de voedselbank.', 'Ze verkopen ze goedkoper.'] },
+      { question: 'Hoe laat sluit de markt?', answer: 'Om vier uur.', options: ['Om twee uur.', 'Om drie uur.', 'Om vier uur.', 'Om vijf uur.'] },
     ],
   },
   // ── A2 — Dutch culture ───────────────────────────────────────────────────────
@@ -1222,10 +1250,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Waar komt Sinterklaas vandaan?', answer: 'Uit Spanje.', options: ['Uit Duitsland.', 'Uit Spanje.', 'Uit België.', 'Uit Engeland.'] },
-      { type: 'fill_blank', question: 'Bij elk cadeau hoort een ___.', answer: 'gedicht' },
-      { type: 'true_false', question: 'Pepernoten zijn grote, vierkante koekjes.', answer: 'Onwaar. Pepernoten zijn kleine, ronde koekjes met specerijen.', correctBool: false },
-      { type: 'open', question: 'Waarom vindt {name} Sinterklaas het mooiste feest?', answer: '{name} vindt Sinterklaas het mooiste feest omdat het de familie bij elkaar brengt.' },
+      { question: 'Waar komt Sinterklaas vandaan?', answer: 'Uit Spanje.', options: ['Uit Duitsland.', 'Uit Spanje.', 'Uit België.', 'Uit Engeland.'] },
+      { question: 'Wat hoort er bij elk cadeau?', answer: 'Een gedicht.', options: ['Een kaart.', 'Een gedicht.', 'Een brief.', 'Een lied.'] },
+      { question: 'Hoe zijn pepernoten?', answer: 'Klein en rond met specerijen.', options: ['Groot en vierkant.', 'Klein en rond met specerijen.', 'Zacht en zoet.', 'Hard en zout.'] },
+      { question: 'Waarom vindt {name} Sinterklaas het mooiste feest?', answer: 'Omdat het de familie bij elkaar brengt.', options: ['Omdat er veel cadeaus zijn.', 'Omdat het de familie bij elkaar brengt.', 'Omdat er lekker eten is.', 'Omdat het een vrije dag is.'] },
+      { question: 'Wat drinken ze na het uitpakken?', answer: 'Warme chocolademelk.', options: ['Koffie.', 'Warme chocolademelk.', 'Thee.', 'Limonade.'] },
     ],
   },
   // ── B1 — Healthcare ──────────────────────────────────────────────────────────
@@ -1275,10 +1304,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Wat heb je nodig om naar een specialist te gaan in Nederland?', answer: 'Een verwijzing van de huisarts.', options: ['Een afspraak bij de specialist zelf.', 'Een verwijzing van de huisarts.', 'Toestemming van de zorgverzekeraar.', 'Een recept van de apotheek.'] },
-      { type: 'true_false', question: 'Bezoeken aan de huisarts vallen onder het eigen risico.', answer: 'Onwaar. Bezoeken aan de huisarts zijn gratis en vallen niet onder het eigen risico.', correctBool: false },
-      { type: 'fill_blank', question: 'In Nederland is iedereen verplicht een ___ te hebben.', answer: 'zorgverzekering' },
-      { type: 'open', question: 'Wat adviseert de huisarts aan {name} en waarom schrijft ze een bloedonderzoek voor?', answer: 'De huisarts adviseert {name} meer te bewegen en beter te slapen. Ze schrijft een bloedonderzoek voor om andere oorzaken van de klachten uit te sluiten.' },
+      { question: 'Wat heb je nodig om naar een specialist te gaan in Nederland?', answer: 'Een verwijzing van de huisarts.', options: ['Een afspraak bij de specialist zelf.', 'Een verwijzing van de huisarts.', 'Toestemming van de zorgverzekeraar.', 'Een recept van de apotheek.'] },
+      { question: 'Vallen bezoeken aan de huisarts onder het eigen risico?', answer: 'Nee, bezoeken aan de huisarts zijn gratis.', options: ['Ja, altijd.', 'Ja, maar alleen de eerste keer.', 'Nee, bezoeken aan de huisarts zijn gratis.', 'Dat hangt af van de verzekering.'] },
+      { question: 'Wat is iedereen in Nederland verplicht te hebben?', answer: 'Een zorgverzekering.', options: ['Een huisarts.', 'Een zorgverzekering.', 'Een patiëntenportaal.', 'Een eigen risico.'] },
+      { question: 'Wat adviseert de huisarts aan {name}?', answer: 'Meer bewegen en beter slapen.', options: ['Medicijnen nemen.', 'Meer bewegen en beter slapen.', 'Een specialist bezoeken.', 'Stoppen met werken.'] },
+      { question: 'Hoe hoog is het eigen risico per jaar?', answer: 'Vierhonderd vijftig euro.', options: ['Tweehonderd euro.', 'Driehonderd euro.', 'Vierhonderd vijftig euro.', 'Zeshonderd euro.'] },
     ],
   },
   // ── B1 — Housing ─────────────────────────────────────────────────────────────
@@ -1328,10 +1358,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Wat is het verschil tussen sociale huur en vrije sector huur?', answer: 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', options: ['Sociale huurwoningen zijn groter dan vrije sector woningen.', 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', 'Vrije sector woningen worden beheerd door de gemeente.', 'Sociale huurwoningen zijn alleen voor studenten.'] },
-      { type: 'fill_blank', question: 'Bij geschillen tussen huurder en verhuurder kan men terecht bij de ___.', answer: 'Huurcommissie' },
-      { type: 'true_false', question: 'In Nederland is het verplicht om je nieuwe adres aan te melden bij de gemeente.', answer: 'Waar. Je moet je inschrijven in de Basisregistratie Personen.', correctBool: true },
-      { type: 'open', question: 'Wat zijn de rechten en plichten van {name} als huurder?', answer: 'De verhuurder is verantwoordelijk voor groot onderhoud. {name} is verantwoordelijk voor kleine reparaties en het schoonhouden van de woning. Bij problemen moet hij dit schriftelijk melden.' },
+      { question: 'Wat is het verschil tussen sociale huur en vrije sector huur?', answer: 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', options: ['Sociale huurwoningen zijn groter dan vrije sector woningen.', 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', 'Vrije sector woningen worden beheerd door de gemeente.', 'Sociale huurwoningen zijn alleen voor studenten.'] },
+      { question: 'Bij welke instantie kan men terecht bij geschillen tussen huurder en verhuurder?', answer: 'De Huurcommissie.', options: ['De gemeente.', 'De Huurcommissie.', 'De rechtbank.', 'De woningcorporatie.'] },
+      { question: 'Is het verplicht om je nieuwe adres aan te melden bij de gemeente?', answer: 'Ja, je moet je inschrijven in de Basisregistratie Personen.', options: ['Nee, dat is optioneel.', 'Ja, je moet je inschrijven in de Basisregistratie Personen.', 'Alleen als je een uitkering ontvangt.', 'Alleen als je een huurwoning hebt.'] },
+      { question: 'Wie is verantwoordelijk voor groot onderhoud van de woning?', answer: 'De verhuurder.', options: ['De huurder.', 'De verhuurder.', 'De gemeente.', 'De woningcorporatie.'] },
+      { question: 'Hoeveel maanden huur vraagt de verhuurder als waarborgsom?', answer: 'Twee maanden huur.', options: ['Één maand huur.', 'Twee maanden huur.', 'Drie maanden huur.', 'Vier maanden huur.'] },
     ],
   },
   // ── B2 — Work and rights ─────────────────────────────────────────────────────
@@ -1381,10 +1412,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Hoeveel vakantiedagen heeft een fulltime werknemer minimaal recht op per jaar?', answer: 'Twintig vakantiedagen.', options: ['Tien vakantiedagen.', 'Vijftien vakantiedagen.', 'Twintig vakantiedagen.', 'Vijfentwintig vakantiedagen.'] },
-      { type: 'true_false', question: 'Bij ziekte is de werkgever verplicht het loon gedurende twee jaar door te betalen.', answer: 'Waar. In het eerste jaar is dit 100% en in het tweede jaar 70% van het loon.', correctBool: true },
-      { type: 'fill_blank', question: 'Bij ontslag heeft een werknemer recht op een ___.', answer: 'transitievergoeding' },
-      { type: 'open', question: 'Wat zijn de plichten van {name} als werknemer?', answer: '{name} moet zijn werk naar behoren uitvoeren, instructies opvolgen, geen vertrouwelijke informatie delen en zich houden aan een eventueel concurrentiebeding.' },
+      { question: 'Hoeveel vakantiedagen heeft een fulltime werknemer minimaal recht op per jaar?', answer: 'Twintig vakantiedagen.', options: ['Tien vakantiedagen.', 'Vijftien vakantiedagen.', 'Twintig vakantiedagen.', 'Vijfentwintig vakantiedagen.'] },
+      { question: 'Hoe lang is de werkgever verplicht het loon door te betalen bij ziekte?', answer: 'Twee jaar.', options: ['Zes maanden.', 'Één jaar.', 'Twee jaar.', 'Drie jaar.'] },
+      { question: 'Hoeveel procent van het loon ontvangt de werknemer in het tweede ziektejaar?', answer: 'Zeventig procent.', options: ['Vijftig procent.', 'Zestig procent.', 'Zeventig procent.', 'Honderd procent.'] },
+      { question: 'Waar heeft een werknemer recht op bij ontslag?', answer: 'Een transitievergoeding.', options: ['Een bonus.', 'Een transitievergoeding.', 'Extra vakantiedagen.', 'Een pensioenuitkering.'] },
+      { question: 'Wanneer is ontslag op staande voet mogelijk?', answer: 'Alleen bij ernstig wangedrag.', options: ['Altijd als de werkgever dat wil.', 'Bij slechte prestaties.', 'Alleen bij ernstig wangedrag.', 'Na twee jaar ziekte.'] },
     ],
   },
   // ── B2 — Civic integration ───────────────────────────────────────────────────
@@ -1434,10 +1466,11 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       ]},
     ],
     questions: [
-      { type: 'multiple_choice', question: 'Welke instantie neemt het inburgeringsexamen af?', answer: 'DUO (Dienst Uitvoering Onderwijs).', options: ['De gemeente.', 'DUO (Dienst Uitvoering Onderwijs).', 'Het UWV.', 'De IND.'] },
-      { type: 'fill_blank', question: 'Na vijf jaar legaal verblijf kan {name} de Nederlandse ___ aanvragen.', answer: 'nationaliteit' },
-      { type: 'true_false', question: 'Onder de Wet Inburgering 2021 heeft de inburgeringsplichtige zelf de volledige verantwoordelijkheid voor zijn inburgering.', answer: 'Onwaar. Onder de Wet Inburgering 2021 heeft de gemeente een actievere rol gekregen en stelt zij een persoonlijk plan op.', correctBool: false },
-      { type: 'open', question: 'Wat zijn de gevolgen als {name} het inburgeringsexamen niet haalt binnen de gestelde termijn?', answer: 'Als {name} het inburgeringsexamen niet haalt binnen drie jaar, kan de gemeente een boete opleggen. Hij kan de onderdelen wel herkansen.' },
+      { question: 'Welke instantie neemt het inburgeringsexamen af?', answer: 'DUO (Dienst Uitvoering Onderwijs).', options: ['De gemeente.', 'DUO (Dienst Uitvoering Onderwijs).', 'Het UWV.', 'De IND.'] },
+      { question: 'Wat kan {name} aanvragen na vijf jaar legaal verblijf?', answer: 'De Nederlandse nationaliteit.', options: ['Een verblijfsvergunning.', 'De Nederlandse nationaliteit.', 'Een werkvergunning.', 'Een paspoort.'] },
+      { question: 'Wie heeft onder de Wet Inburgering 2021 een actievere rol gekregen?', answer: 'De gemeente.', options: ['DUO.', 'De gemeente.', 'De inburgeringsplichtige zelf.', 'Het taleninstituut.'] },
+      { question: 'Wat zijn de gevolgen als {name} het inburgeringsexamen niet haalt binnen drie jaar?', answer: 'De gemeente kan een boete opleggen.', options: ['Hij moet het land verlaten.', 'De gemeente kan een boete opleggen.', 'Hij verliest zijn verblijfsvergunning.', 'Hij moet opnieuw beginnen.'] },
+      { question: 'Hoeveel jaar heeft {name} de tijd om het volledige examen te halen?', answer: 'Drie jaar.', options: ['Één jaar.', 'Twee jaar.', 'Drie jaar.', 'Vijf jaar.'] },
     ],
   },
 ];
@@ -1494,11 +1527,10 @@ function generateProceduralStory(
       })),
       questions: template.questions.map((q) => ({
         id: generateId(),
-        type: q.type,
+        type: 'multiple_choice' as const,
         question: fill(q.question, vars),
         answer: fill(q.answer, vars),
-        ...(q.options ? { options: q.options.map((o) => fill(o, vars)) } : {}),
-        ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
+        options: q.options.map((o) => fill(o, vars)),
       })),
     };
 
@@ -1586,11 +1618,9 @@ Requirements:
 - The text MUST be at least 500 words in Dutch
 - 5 to 6 paragraphs, each with 5 to 8 sentences
 - Each sentence must have an English translation
-- Include exactly 4 comprehension questions in Dutch, one of each type:
-  1. "multiple_choice" — provide 4 options (one correct), field "options": ["...", "...", "...", "..."]
-  2. "fill_blank" — sentence with ___ for the missing word, field "answer" is the missing word only
-  3. "true_false" — a statement that is true or false, field "correctBool": true or false, "answer" explains why
-  4. "open" — open-ended question requiring a full sentence answer
+- Include exactly 5 comprehension questions in Dutch, ALL of type "multiple_choice"
+  - Each question must have exactly 4 options (one correct), field "options": ["...", "...", "...", "..."]
+  - The "answer" field must exactly match one of the options
 - Questions should test real comprehension, not just word recognition
 - For B1/B2: include at least one question about implied meaning or inference
 - The text should be realistic, culturally relevant to the Netherlands, and exam-appropriate
@@ -1608,9 +1638,10 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
   ],
   "questions": [
     { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] },
-    { "type": "fill_blank", "question": "Dutch sentence with ___ blank.", "answer": "missing word" },
-    { "type": "true_false", "question": "Dutch statement.", "answer": "Waar/Onwaar. Explanation.", "correctBool": true },
-    { "type": "open", "question": "Dutch question?", "answer": "Full Dutch answer." }
+    { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] },
+    { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] },
+    { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] },
+    { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] }
   ]
 }`;
 }
@@ -1639,13 +1670,12 @@ function parseLLMStory(content: string, level: 'A1' | 'A2' | 'B1' | 'B2', topic:
           translation: s.translation,
         })),
       })),
-      questions: (parsed.questions || []).map((q: { type?: string; question: string; answer: string; options?: string[]; correctBool?: boolean }) => ({
+      questions: (parsed.questions || []).map((q: { type?: string; question: string; answer: string; options?: string[] }) => ({
         id: generateId(),
-        type: (q.type as QuestionType) || 'open',
+        type: 'multiple_choice' as const,
         question: q.question,
         answer: q.answer,
-        ...(q.options ? { options: q.options } : {}),
-        ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
+        options: q.options || [],
       })),
     };
   } catch {

@@ -23,7 +23,7 @@ export interface Paragraph {
   sentences: Sentence[];
 }
 
-export type QuestionType = 'open' | 'multiple_choice' | 'fill_blank' | 'true_false';
+export type QuestionType = 'multiple_choice';
 
 export interface ComprehensionQuestion {
   id: string;
@@ -32,9 +32,7 @@ export interface ComprehensionQuestion {
   /** Correct answer (always present) */
   answer: string;
   /** Options for multiple_choice questions (includes the correct answer) */
-  options?: string[];
-  /** For true_false: true | false */
-  correctBool?: boolean;
+  options: string[];
 }
 
 export interface Story {

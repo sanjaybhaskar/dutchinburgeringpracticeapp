@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Story, Sentence, Paragraph, ComprehensionQuestion, StoryTopic, QuestionType } from './types/story';
+import { Story, Sentence, Paragraph, ComprehensionQuestion, StoryTopic } from './types/story';
 import { useSpeech, PlaybackSpeed, SPEED_RATES, SPEED_LABELS } from './hooks/useSpeech';
 import { tokenizeSentence, stripPunctuation } from './lib/tokenize';
 
@@ -576,25 +576,22 @@ export default function Home() {
               {isSupported && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-neutral-400 w-12 shrink-0">Voice:</span>
-                  {dutchVoices.length > 0 ? (
-                    <select
-                      value={selectedVoice?.name ?? ''}
-                      onChange={(e) => {
-                        const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
-                        setSelectedVoice(v);
-                      }}
-                      className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
-                    >
-                      {dutchVoices.map((v) => (
-                        <option key={v.name} value={v.name}>
-                          {v.name.replace(/Microsoft |Google |Apple /, '')}
-                          {v.localService ? '' : ' ☁️'}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-xs text-neutral-500 italic">No Dutch voices found — using browser default</span>
-                  )}
+                  <select
+                    value={selectedVoice?.name ?? ''}
+                    onChange={(e) => {
+                      const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
+                      setSelectedVoice(v);
+                    }}
+                    className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
+                  >
+                    <option value="">🇳🇱 Default Dutch (nl-NL)</option>
+                    {dutchVoices.map((v) => (
+                      <option key={v.name} value={v.name}>
+                        {v.name.replace(/Microsoft |Google |Apple /, '')}
+                        {v.localService ? '' : ' ☁️'}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>
@@ -655,7 +652,7 @@ export default function Home() {
             </div>
 
             {/* Voice selector */}
-            {dutchVoices.length > 0 && (
+            {isSupported && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-neutral-400">Voice:</span>
                 <select
@@ -666,6 +663,7 @@ export default function Home() {
                   }}
                   className="bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600 max-w-[200px]"
                 >
+                  <option value="">🇳🇱 Default Dutch (nl-NL)</option>
                   {dutchVoices.map((v) => (
                     <option key={v.name} value={v.name}>
                       {v.name.replace(/Microsoft |Google |Apple /, '')}
@@ -1112,13 +1110,6 @@ export default function Home() {
 
 // ─── Comprehension Question Card ──────────────────────────────────────────────
 
-const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  open: '💬 Open',
-  multiple_choice: '🔘 Multiple Choice',
-  fill_blank: '✏️ Fill in the Blank',
-  true_false: '✅ True / False',
-};
-
 interface QuestionCardProps {
   question: ComprehensionQuestion;
   isRevealed: boolean;
@@ -1127,10 +1118,8 @@ interface QuestionCardProps {
   onSelectOption: (option: string) => void;
 }
 
-function QuestionCard({ question, isRevealed, selectedOption, onToggle, onSelectOption }: QuestionCardProps) {
-  const typeLabel = QUESTION_TYPE_LABELS[question.type] ?? '💬 Open';
-
-  // Determine if the selected option is correct (for multiple_choice)
+function QuestionCard({ question, isRevealed, selectedOption, onSelectOption }: QuestionCardProps) {
+  // Determine if the selected option is correct
   const isCorrect = selectedOption !== null && selectedOption === question.answer;
   const isWrong = selectedOption !== null && selectedOption !== question.answer;
 
@@ -1138,77 +1127,40 @@ function QuestionCard({ question, isRevealed, selectedOption, onToggle, onSelect
     <div className="border border-neutral-700 rounded-lg overflow-hidden">
       {/* Question header */}
       <div className="px-4 py-3 bg-neutral-700/30">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
           <div className="flex-1">
-            <span className="text-xs text-neutral-500 font-medium">{typeLabel}</span>
+            <span className="text-xs text-neutral-500 font-medium">🔘 Multiple Choice</span>
             <p className="text-sm text-neutral-200 leading-relaxed mt-1">{question.question}</p>
           </div>
-          {/* For open / true_false / fill_blank: toggle button */}
-          {question.type !== 'multiple_choice' && (
-            <button
-              onClick={onToggle}
-              className="text-neutral-400 hover:text-white shrink-0 mt-0.5 transition-colors text-xs px-2 py-1 rounded bg-neutral-700 hover:bg-neutral-600"
-            >
-              {isRevealed ? 'Hide' : 'Show Answer'}
-            </button>
-          )}
         </div>
       </div>
 
       {/* Multiple choice options */}
-      {question.type === 'multiple_choice' && question.options && (
-        <div className="px-4 py-3 space-y-2">
-          {question.options.map((opt) => {
-            const isSelected = selectedOption === opt;
-            const isThisCorrect = opt === question.answer;
-            let optClass = 'border border-neutral-600 bg-neutral-700/40 text-neutral-200 hover:bg-neutral-700';
-            if (isSelected && isThisCorrect) optClass = 'border border-green-500 bg-green-900/30 text-green-300';
-            else if (isSelected && !isThisCorrect) optClass = 'border border-red-500 bg-red-900/30 text-red-300';
-            else if (!isSelected && isRevealed && isThisCorrect) optClass = 'border border-green-500/50 bg-green-900/20 text-green-400';
-            return (
-              <button
-                key={opt}
-                onClick={() => onSelectOption(opt)}
-                disabled={selectedOption !== null}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${optClass} disabled:cursor-default`}
-              >
-                {opt}
-              </button>
-            );
-          })}
-          {selectedOption && (
-            <p className={`text-xs mt-1 ${isCorrect ? 'text-green-400' : isWrong ? 'text-red-400' : ''}`}>
-              {isCorrect ? '✓ Correct!' : '✗ Not quite. The correct answer is highlighted above.'}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Fill in the blank — show answer on toggle */}
-      {question.type === 'fill_blank' && isRevealed && (
-        <div className="px-4 py-3 bg-blue-900/20 border-t border-neutral-700">
-          <p className="text-xs text-neutral-500 mb-1">Missing word:</p>
-          <p className="text-sm text-blue-300 font-medium">{question.answer}</p>
-        </div>
-      )}
-
-      {/* True / False — show answer on toggle */}
-      {question.type === 'true_false' && isRevealed && (
-        <div className="px-4 py-3 bg-yellow-900/20 border-t border-neutral-700">
-          <p className="text-xs text-neutral-500 mb-1">
-            {question.correctBool === true ? '✅ Waar (True)' : question.correctBool === false ? '❌ Onwaar (False)' : 'Answer:'}
+      <div className="px-4 py-3 space-y-2">
+        {question.options.map((opt) => {
+          const isSelected = selectedOption === opt;
+          const isThisCorrect = opt === question.answer;
+          let optClass = 'border border-neutral-600 bg-neutral-700/40 text-neutral-200 hover:bg-neutral-700';
+          if (isSelected && isThisCorrect) optClass = 'border border-green-500 bg-green-900/30 text-green-300';
+          else if (isSelected && !isThisCorrect) optClass = 'border border-red-500 bg-red-900/30 text-red-300';
+          else if (!isSelected && isRevealed && isThisCorrect) optClass = 'border border-green-500/50 bg-green-900/20 text-green-400';
+          return (
+            <button
+              key={opt}
+              onClick={() => onSelectOption(opt)}
+              disabled={selectedOption !== null}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${optClass} disabled:cursor-default`}
+            >
+              {opt}
+            </button>
+          );
+        })}
+        {selectedOption && (
+          <p className={`text-xs mt-1 ${isCorrect ? 'text-green-400' : isWrong ? 'text-red-400' : ''}`}>
+            {isCorrect ? '✓ Correct!' : '✗ Not quite. The correct answer is highlighted above.'}
           </p>
-          <p className="text-sm text-yellow-300 leading-relaxed">{question.answer}</p>
-        </div>
-      )}
-
-      {/* Open question — show answer on toggle */}
-      {question.type === 'open' && isRevealed && (
-        <div className="px-4 py-3 bg-green-900/20 border-t border-neutral-700">
-          <p className="text-xs text-neutral-500 mb-1">Answer:</p>
-          <p className="text-sm text-green-400 leading-relaxed">{question.answer}</p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
