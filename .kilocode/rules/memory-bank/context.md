@@ -6,6 +6,13 @@
 
 ## Recently Completed
 
+- [x] **Fix (Feb 2026) — Dutch voice dropdown not appearing on mobile:**
+  - [x] Root cause: mobile browsers (Chrome on Android, Safari on iOS) return empty array from `getVoices()` on first call; `voiceschanged` event may not fire until user interaction
+  - [x] Added retry polling in `useSpeech.ts`: after initial `loadVoices()` call, schedules retries at 100ms, 500ms, 1000ms, 2000ms delays to catch late-loading voices
+  - [x] `loadVoices()` now only updates state when `availableVoices.length > 0` (avoids overwriting a populated list with an empty one)
+  - [x] Mobile voice dropdown now shows even when `dutchVoices.length === 0`: renders a "No Dutch voices found — using browser default" message instead of hiding the row entirely
+  - [x] Condition changed from `dutchVoices.length > 0 &&` to `isSupported &&` so the Voice row is always visible in the mobile settings panel when TTS is supported
+
 - [x] **Update (Feb 2026) — Play Story resumes from last clicked sentence:**
   - [x] Added `lastClickedSentenceIdRef` (useRef) to track the last sentence the user clicked
   - [x] `handleSentenceClick` and `handleWordClick` both update `lastClickedSentenceIdRef.current`
@@ -229,6 +236,7 @@ bun run dev
 | Feb 2026 | Improved TTS: smart voice selection (neural > enhanced > standard), 4 speed options, voice picker UI |
 | Feb 2026 | Compact mobile footer: collapsible How-to-Use section, reduced padding/font sizes |
 | Feb 2026 | Play Story resumes from last clicked sentence (lastClickedSentenceIdRef) |
+| Feb 2026 | Fix: Dutch voice dropdown on mobile — retry polling (100/500/1000/2000ms) + fallback message when no Dutch voices found |
 
 ## Notes
 
