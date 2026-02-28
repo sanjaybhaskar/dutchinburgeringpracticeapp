@@ -707,6 +707,595 @@ function hydrateStory(raw: RawStory): Story {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Procedural story generator — creates unique stories from templates
+// so the app never runs out of fresh content without an API key.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DUTCH_NAMES = [
+  'Emma', 'Liam', 'Sophie', 'Noah', 'Julia', 'Daan', 'Anna', 'Lars',
+  'Mia', 'Finn', 'Sara', 'Bram', 'Lisa', 'Sven', 'Eva', 'Joris',
+  'Nora', 'Pieter', 'Hanna', 'Ruben', 'Inge', 'Thijs', 'Roos', 'Koen',
+];
+
+const DUTCH_CITIES = [
+  'Amsterdam', 'Rotterdam', 'Utrecht', 'Den Haag', 'Eindhoven',
+  'Groningen', 'Leiden', 'Haarlem', 'Delft', 'Maastricht',
+  'Nijmegen', 'Tilburg', 'Breda', 'Arnhem', 'Zwolle',
+];
+
+const DUTCH_FOODS = [
+  'stamppot', 'erwtensoep', 'bitterballen', 'stroopwafels', 'poffertjes',
+  'haring', 'kaas', 'pannenkoeken', 'oliebollen', 'appeltaart',
+];
+
+const DUTCH_HOBBIES = [
+  'fietsen', 'schilderen', 'lezen', 'koken', 'tuinieren',
+  'zwemmen', 'wandelen', 'fotograferen', 'muziek maken', 'voetballen',
+];
+
+const DUTCH_JOBS = [
+  'leraar', 'dokter', 'bakker', 'ingenieur', 'verpleegkundige',
+  'journalist', 'architect', 'kok', 'bibliotheekmedewerker', 'programmeur',
+];
+
+const DUTCH_SEASONS = ['lente', 'zomer', 'herfst', 'winter'];
+const DUTCH_MONTHS = [
+  'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+  'juli', 'augustus', 'september', 'oktober', 'november', 'december',
+];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickExcluding<T>(arr: T[], exclude: T[]): T {
+  const filtered = arr.filter((x) => !exclude.includes(x));
+  return filtered.length > 0 ? pick(filtered) : pick(arr);
+}
+
+interface StoryVars {
+  name: string;
+  name2: string;
+  city: string;
+  city2: string;
+  food: string;
+  hobby: string;
+  job: string;
+  season: string;
+  month: string;
+}
+
+function makeVars(): StoryVars {
+  const name = pick(DUTCH_NAMES);
+  const name2 = pickExcluding(DUTCH_NAMES, [name]);
+  const city = pick(DUTCH_CITIES);
+  const city2 = pickExcluding(DUTCH_CITIES, [city]);
+  return {
+    name, name2, city, city2,
+    food: pick(DUTCH_FOODS),
+    hobby: pick(DUTCH_HOBBIES),
+    job: pick(DUTCH_JOBS),
+    season: pick(DUTCH_SEASONS),
+    month: pick(DUTCH_MONTHS),
+  };
+}
+
+function fill(template: string, vars: StoryVars): string {
+  return template
+    .replace(/\{name\}/g, vars.name)
+    .replace(/\{name2\}/g, vars.name2)
+    .replace(/\{city\}/g, vars.city)
+    .replace(/\{city2\}/g, vars.city2)
+    .replace(/\{food\}/g, vars.food)
+    .replace(/\{hobby\}/g, vars.hobby)
+    .replace(/\{job\}/g, vars.job)
+    .replace(/\{season\}/g, vars.season)
+    .replace(/\{month\}/g, vars.month);
+}
+
+// Story templates — each has Dutch text + English translation, with {var} placeholders
+type RawSentenceTemplate = { text: string; translation: string };
+type RawParagraphTemplate = { sentences: RawSentenceTemplate[] };
+type RawStoryTemplate = {
+  titleTemplate: string;
+  level: 'A1' | 'A2';
+  topic: StoryTopic | string;
+  paragraphs: RawParagraphTemplate[];
+  questions: RawQuestion[];
+};
+
+const STORY_TEMPLATES: RawStoryTemplate[] = [
+  // ── A1 — Daily life ──────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Een Dag met {name}',
+    level: 'A1',
+    topic: 'daily life',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} woont in {city}.', translation: '{name} lives in {city}.' },
+        { text: 'Elke ochtend staat {name} vroeg op.', translation: 'Every morning {name} gets up early.' },
+        { text: '{name} werkt als {job}.', translation: '{name} works as a {job}.' },
+        { text: 'Het werk begint om negen uur.', translation: 'Work starts at nine o\'clock.' },
+        { text: '{name} gaat op de fiets naar het werk.', translation: '{name} cycles to work.' },
+      ]},
+      { sentences: [
+        { text: 'In de ochtend eet {name} een boterham.', translation: 'In the morning {name} eats a sandwich.' },
+        { text: '{name} drinkt een kop koffie.', translation: '{name} drinks a cup of coffee.' },
+        { text: 'Het ontbijt is snel en simpel.', translation: 'Breakfast is quick and simple.' },
+        { text: 'Daarna pakt {name} zijn tas.', translation: 'Then {name} grabs his bag.' },
+        { text: 'De fiets staat buiten voor de deur.', translation: 'The bicycle is outside in front of the door.' },
+      ]},
+      { sentences: [
+        { text: 'Op het werk praat {name} met collega\'s.', translation: 'At work {name} talks with colleagues.' },
+        { text: 'Ze drinken samen koffie in de pauze.', translation: 'They drink coffee together during the break.' },
+        { text: '{name} werkt hard en is blij met zijn baan.', translation: '{name} works hard and is happy with his job.' },
+        { text: 'Om twaalf uur eet {name} zijn lunch.', translation: 'At twelve o\'clock {name} eats his lunch.' },
+        { text: 'Hij eet een broodje met kaas.', translation: 'He eats a roll with cheese.' },
+        { text: 'Na de lunch gaat hij weer aan het werk.', translation: 'After lunch he goes back to work.' },
+      ]},
+      { sentences: [
+        { text: 'Na het werk gaat {name} naar huis.', translation: 'After work {name} goes home.' },
+        { text: 'Thuis kookt {name} het avondeten.', translation: 'At home {name} cooks dinner.' },
+        { text: 'Vanavond maakt {name} {food}.', translation: 'Tonight {name} makes {food}.' },
+        { text: 'Het ruikt heerlijk in de keuken.', translation: 'It smells wonderful in the kitchen.' },
+        { text: '{name} eet alleen aan de keukentafel.', translation: '{name} eats alone at the kitchen table.' },
+        { text: 'Het eten is lekker.', translation: 'The food is delicious.' },
+      ]},
+      { sentences: [
+        { text: 'In de avond doet {name} aan {hobby}.', translation: 'In the evening {name} does {hobby}.' },
+        { text: 'Dat is zijn favoriete hobby.', translation: 'That is his favourite hobby.' },
+        { text: '{name} vindt het heel leuk.', translation: '{name} finds it very enjoyable.' },
+        { text: 'Om tien uur gaat {name} naar bed.', translation: 'At ten o\'clock {name} goes to bed.' },
+        { text: 'Morgen is er weer een nieuwe dag.', translation: 'Tomorrow there will be another new day.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Wat is het beroep van {name}?', answer: '{name} is {job}.', options: ['{job}', 'dokter', 'bakker', 'leraar'] },
+      { type: 'true_false', question: '{name} gaat met de auto naar het werk.', answer: 'Onwaar. {name} gaat op de fiets naar het werk.', correctBool: false },
+      { type: 'fill_blank', question: 'Vanavond maakt {name} ___.', answer: '{food}' },
+      { type: 'open', question: 'Wat doet {name} in de avond?', answer: '{name} doet aan {hobby} in de avond.' },
+    ],
+  },
+  // ── A1 — Travel ──────────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Een Reis naar {city}',
+    level: 'A1',
+    topic: 'travel',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} gaat op reis naar {city}.', translation: '{name} is going on a trip to {city}.' },
+        { text: 'Het is de eerste keer dat {name} daar naartoe gaat.', translation: 'It is the first time {name} goes there.' },
+        { text: '{name} is erg blij en opgewonden.', translation: '{name} is very happy and excited.' },
+        { text: 'Hij pakt zijn koffer in.', translation: 'He packs his suitcase.' },
+        { text: 'Hij neemt kleren, schoenen en een tandenborstel mee.', translation: 'He takes clothes, shoes and a toothbrush.' },
+      ]},
+      { sentences: [
+        { text: '{name} gaat met de trein naar {city}.', translation: '{name} goes to {city} by train.' },
+        { text: 'Het station is groot en druk.', translation: 'The station is big and busy.' },
+        { text: '{name} koopt een treinkaartje.', translation: '{name} buys a train ticket.' },
+        { text: 'De trein vertrekt om tien uur.', translation: 'The train departs at ten o\'clock.' },
+        { text: 'De reis duurt twee uur.', translation: 'The journey takes two hours.' },
+        { text: '{name} kijkt uit het raam naar het landschap.', translation: '{name} looks out the window at the landscape.' },
+      ]},
+      { sentences: [
+        { text: 'In {city} gaat {name} naar het centrum.', translation: 'In {city} {name} goes to the city centre.' },
+        { text: 'Hij bezoekt een museum.', translation: 'He visits a museum.' },
+        { text: 'Het museum is interessant en mooi.', translation: 'The museum is interesting and beautiful.' },
+        { text: '{name} maakt veel foto\'s.', translation: '{name} takes many photos.' },
+        { text: 'Daarna gaat hij naar een café.', translation: 'Then he goes to a café.' },
+        { text: 'Hij drinkt een kop koffie en eet een stuk taart.', translation: 'He drinks a cup of coffee and eats a piece of cake.' },
+      ]},
+      { sentences: [
+        { text: 'In de middag wandelt {name} door de stad.', translation: 'In the afternoon {name} walks through the city.' },
+        { text: 'Hij ziet mooie gebouwen en grachten.', translation: 'He sees beautiful buildings and canals.' },
+        { text: 'De stad is heel mooi.', translation: 'The city is very beautiful.' },
+        { text: '{name} koopt een souvenir voor zijn familie.', translation: '{name} buys a souvenir for his family.' },
+        { text: 'Hij vindt een leuk winkeltje in een zijstraat.', translation: 'He finds a nice little shop in a side street.' },
+        { text: 'Hij koopt een klein schilderijtje.', translation: 'He buys a small painting.' },
+      ]},
+      { sentences: [
+        { text: 'In de avond eet {name} in een restaurant.', translation: 'In the evening {name} eats in a restaurant.' },
+        { text: 'Hij bestelt {food}.', translation: 'He orders {food}.' },
+        { text: 'Het eten is heerlijk.', translation: 'The food is delicious.' },
+        { text: 'Na het eten gaat {name} naar zijn hotel.', translation: 'After dinner {name} goes to his hotel.' },
+        { text: 'Hij is moe maar gelukkig.', translation: 'He is tired but happy.' },
+        { text: 'Morgen gaat hij weer naar huis.', translation: 'Tomorrow he goes home again.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Hoe reist {name} naar {city}?', answer: 'Met de trein.', options: ['Met de auto.', 'Met de trein.', 'Met het vliegtuig.', 'Op de fiets.'] },
+      { type: 'fill_blank', question: '{name} bestelt ___ in het restaurant.', answer: '{food}' },
+      { type: 'true_false', question: '{name} is al eerder in {city} geweest.', answer: 'Onwaar. Het is de eerste keer dat {name} naar {city} gaat.', correctBool: false },
+      { type: 'open', question: 'Wat koopt {name} als souvenir?', answer: '{name} koopt een klein schilderijtje als souvenir.' },
+    ],
+  },
+  // ── A1 — Market ──────────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Op de Markt in {city}',
+    level: 'A1',
+    topic: 'market',
+    paragraphs: [
+      { sentences: [
+        { text: 'Op zaterdag gaat {name} naar de markt in {city}.', translation: 'On Saturday {name} goes to the market in {city}.' },
+        { text: 'De markt is groot en kleurrijk.', translation: 'The market is large and colourful.' },
+        { text: 'Er zijn veel kramen met groenten, fruit en kaas.', translation: 'There are many stalls with vegetables, fruit and cheese.' },
+        { text: '{name} houdt van de markt.', translation: '{name} loves the market.' },
+        { text: 'Het is altijd gezellig en druk.', translation: 'It is always cosy and busy.' },
+      ]},
+      { sentences: [
+        { text: '{name} koopt eerst groenten.', translation: '{name} first buys vegetables.' },
+        { text: 'Hij koopt tomaten, wortels en uien.', translation: 'He buys tomatoes, carrots and onions.' },
+        { text: 'De groenten zijn vers en goedkoop.', translation: 'The vegetables are fresh and cheap.' },
+        { text: 'De marktkoopman is vriendelijk.', translation: 'The market vendor is friendly.' },
+        { text: 'Hij geeft {name} een extra appel cadeau.', translation: 'He gives {name} an extra apple as a gift.' },
+        { text: '{name} bedankt hem.', translation: '{name} thanks him.' },
+      ]},
+      { sentences: [
+        { text: 'Daarna gaat {name} naar de kaasstand.', translation: 'Then {name} goes to the cheese stall.' },
+        { text: 'Er zijn veel soorten kaas.', translation: 'There are many types of cheese.' },
+        { text: '{name} proeft een stukje oude kaas.', translation: '{name} tastes a piece of aged cheese.' },
+        { text: 'De kaas is lekker en sterk van smaak.', translation: 'The cheese is tasty and strong in flavour.' },
+        { text: 'Hij koopt een half kilo Goudse kaas.', translation: 'He buys half a kilo of Gouda cheese.' },
+        { text: 'De kaas kost vier euro.', translation: 'The cheese costs four euros.' },
+      ]},
+      { sentences: [
+        { text: 'Bij de bakker koopt {name} vers brood.', translation: 'At the baker {name} buys fresh bread.' },
+        { text: 'Het brood ruikt heerlijk.', translation: 'The bread smells wonderful.' },
+        { text: 'Hij koopt ook een stuk {food}.', translation: 'He also buys a piece of {food}.' },
+        { text: 'De bakker is al vroeg op de markt.', translation: 'The baker is at the market early.' },
+        { text: 'Zijn producten zijn altijd vers.', translation: 'His products are always fresh.' },
+        { text: '{name} is een vaste klant.', translation: '{name} is a regular customer.' },
+      ]},
+      { sentences: [
+        { text: 'Na het winkelen drinkt {name} een kop koffie.', translation: 'After shopping {name} drinks a cup of coffee.' },
+        { text: 'Hij zit op een terrasje bij de markt.', translation: 'He sits on a terrace near the market.' },
+        { text: 'Het is een mooie {season}dag.', translation: 'It is a beautiful {season} day.' },
+        { text: '{name} kijkt naar de mensen op de markt.', translation: '{name} watches the people at the market.' },
+        { text: 'Hij is blij met zijn aankopen.', translation: 'He is happy with his purchases.' },
+        { text: 'Volgende week komt hij zeker terug.', translation: 'Next week he will certainly come back.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Wanneer gaat {name} naar de markt?', answer: 'Op zaterdag.', options: ['Op maandag.', 'Op woensdag.', 'Op zaterdag.', 'Op zondag.'] },
+      { type: 'fill_blank', question: '{name} koopt ook een stuk ___ bij de bakker.', answer: '{food}' },
+      { type: 'true_false', question: 'De groenten op de markt zijn duur.', answer: 'Onwaar. De groenten zijn vers en goedkoop.', correctBool: false },
+      { type: 'open', question: 'Wat doet {name} na het winkelen?', answer: '{name} drinkt een kop koffie op een terrasje bij de markt.' },
+    ],
+  },
+  // ── A1 — Dutch culture ───────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Fietsen in {city}',
+    level: 'A1',
+    topic: 'Dutch culture',
+    paragraphs: [
+      { sentences: [
+        { text: 'In Nederland fietst iedereen.', translation: 'In the Netherlands everyone cycles.' },
+        { text: '{name} woont in {city} en fietst elke dag.', translation: '{name} lives in {city} and cycles every day.' },
+        { text: 'Hij heeft een oude, blauwe fiets.', translation: 'He has an old, blue bicycle.' },
+        { text: 'De fiets is zijn favoriete vervoermiddel.', translation: 'The bicycle is his favourite means of transport.' },
+        { text: 'In {city} zijn veel fietspaden.', translation: 'In {city} there are many cycle paths.' },
+      ]},
+      { sentences: [
+        { text: '{name} fietst naar zijn werk.', translation: '{name} cycles to work.' },
+        { text: 'Het duurt twintig minuten.', translation: 'It takes twenty minutes.' },
+        { text: 'Onderweg ziet hij de grachten en de mooie huizen.', translation: 'On the way he sees the canals and the beautiful houses.' },
+        { text: 'Hij vindt fietsen heerlijk.', translation: 'He finds cycling wonderful.' },
+        { text: 'Ook als het regent, fietst {name}.', translation: 'Even when it rains, {name} cycles.' },
+        { text: 'Hij heeft een goede regenjas.', translation: 'He has a good raincoat.' },
+      ]},
+      { sentences: [
+        { text: 'In het weekend fietst {name} met zijn vriend {name2}.', translation: 'At the weekend {name} cycles with his friend {name2}.' },
+        { text: 'Ze fietsen door het platteland.', translation: 'They cycle through the countryside.' },
+        { text: 'Het landschap is groen en vlak.', translation: 'The landscape is green and flat.' },
+        { text: 'Ze zien koeien en schapen in de weilanden.', translation: 'They see cows and sheep in the meadows.' },
+        { text: 'Na een uur stoppen ze bij een café.', translation: 'After an hour they stop at a café.' },
+        { text: 'Ze drinken koffie en eten een stuk appeltaart.', translation: 'They drink coffee and eat a piece of apple pie.' },
+      ]},
+      { sentences: [
+        { text: 'Nederland heeft meer fietsen dan mensen.', translation: 'The Netherlands has more bicycles than people.' },
+        { text: 'Dat is een bijzonder feit.', translation: 'That is a remarkable fact.' },
+        { text: 'Nederlanders fietsen naar school, naar het werk en naar de winkel.', translation: 'Dutch people cycle to school, to work and to the shop.' },
+        { text: 'Fietsen is goed voor het milieu.', translation: 'Cycling is good for the environment.' },
+        { text: 'Het is ook gezond.', translation: 'It is also healthy.' },
+        { text: '{name} is trots op de Nederlandse fietscultuur.', translation: '{name} is proud of Dutch cycling culture.' },
+      ]},
+      { sentences: [
+        { text: 'Op een mooie {season}dag fietst {name} naar {city2}.', translation: 'On a beautiful {season} day {name} cycles to {city2}.' },
+        { text: 'De afstand is dertig kilometer.', translation: 'The distance is thirty kilometres.' },
+        { text: 'Het is een lange maar mooie rit.', translation: 'It is a long but beautiful ride.' },
+        { text: 'In {city2} bezoekt hij een vriend.', translation: 'In {city2} he visits a friend.' },
+        { text: 'Ze eten samen {food}.', translation: 'They eat {food} together.' },
+        { text: 'In de avond fietst {name} weer naar huis.', translation: 'In the evening {name} cycles home again.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Hoe lang duurt de fietstocht van {name} naar zijn werk?', answer: 'Twintig minuten.', options: ['Tien minuten.', 'Twintig minuten.', 'Een half uur.', 'Een uur.'] },
+      { type: 'true_false', question: '{name} fietst alleen als het mooi weer is.', answer: 'Onwaar. Ook als het regent, fietst {name}.', correctBool: false },
+      { type: 'fill_blank', question: 'In het weekend fietst {name} met zijn vriend ___.', answer: '{name2}' },
+      { type: 'open', question: 'Waarom is fietsen goed?', answer: 'Fietsen is goed voor het milieu en het is ook gezond.' },
+    ],
+  },
+  // ── A2 — Daily life ──────────────────────────────────────────────────────────
+  {
+    titleTemplate: '{name} Leert {hobby}',
+    level: 'A2',
+    topic: 'daily life',
+    paragraphs: [
+      { sentences: [
+        { text: 'Vorig jaar besloot {name} om {hobby} te leren.', translation: 'Last year {name} decided to learn {hobby}.' },
+        { text: 'Hij had er altijd al van gedroomd.', translation: 'He had always dreamed of it.' },
+        { text: '{name} woont in {city} en werkt als {job}.', translation: '{name} lives in {city} and works as a {job}.' },
+        { text: 'Na zijn werk heeft hij elke avond een paar uur vrij.', translation: 'After work he has a few hours free every evening.' },
+        { text: 'Hij besloot die tijd te gebruiken voor zijn nieuwe hobby.', translation: 'He decided to use that time for his new hobby.' },
+      ]},
+      { sentences: [
+        { text: 'In het begin was {hobby} moeilijk voor {name}.', translation: 'At first {hobby} was difficult for {name}.' },
+        { text: 'Hij maakte veel fouten, maar gaf niet op.', translation: 'He made many mistakes, but did not give up.' },
+        { text: '{name} keek video\'s op internet om te leren.', translation: '{name} watched videos on the internet to learn.' },
+        { text: 'Hij oefende elke dag een half uur.', translation: 'He practised for half an hour every day.' },
+        { text: 'Langzaam werd hij beter.', translation: 'Slowly he got better.' },
+        { text: 'Zijn vriend {name2} hielp hem ook.', translation: 'His friend {name2} also helped him.' },
+      ]},
+      { sentences: [
+        { text: 'Na een maand kon {name} al goed {hobby}.', translation: 'After a month {name} could already do {hobby} well.' },
+        { text: 'Hij was trots op zijn vooruitgang.', translation: 'He was proud of his progress.' },
+        { text: '{name2} zei dat hij heel goed was geworden.', translation: '{name2} said that he had become very good.' },
+        { text: 'Dat gaf {name} veel motivatie.', translation: 'That gave {name} a lot of motivation.' },
+        { text: 'Hij besloot om een cursus te volgen.', translation: 'He decided to take a course.' },
+        { text: 'De cursus was in {city} en kostte vijftig euro.', translation: 'The course was in {city} and cost fifty euros.' },
+      ]},
+      { sentences: [
+        { text: 'Op de cursus ontmoette {name} andere mensen met dezelfde hobby.', translation: 'At the course {name} met other people with the same hobby.' },
+        { text: 'Ze werden snel vrienden.', translation: 'They quickly became friends.' },
+        { text: 'Elke week kwamen ze samen om te oefenen.', translation: 'Every week they came together to practise.' },
+        { text: '{name} leerde veel van de andere cursisten.', translation: '{name} learned a lot from the other course participants.' },
+        { text: 'De leraar was geduldig en enthousiast.', translation: 'The teacher was patient and enthusiastic.' },
+        { text: 'Na drie maanden had {name} zijn certificaat.', translation: 'After three months {name} had his certificate.' },
+      ]},
+      { sentences: [
+        { text: 'Nu is {hobby} een belangrijk deel van het leven van {name}.', translation: 'Now {hobby} is an important part of {name}\'s life.' },
+        { text: 'Hij doet het elke week.', translation: 'He does it every week.' },
+        { text: 'Het geeft hem energie en plezier.', translation: 'It gives him energy and pleasure.' },
+        { text: '{name} raadt iedereen aan om een nieuwe hobby te proberen.', translation: '{name} recommends everyone to try a new hobby.' },
+        { text: 'Het is nooit te laat om iets nieuws te leren.', translation: 'It is never too late to learn something new.' },
+        { text: 'Volgend jaar wil {name} {hobby} op een hoger niveau brengen.', translation: 'Next year {name} wants to take {hobby} to a higher level.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Waarom begon {name} met {hobby}?', answer: 'Omdat hij er altijd al van had gedroomd.', options: ['Omdat zijn baas het vroeg.', 'Omdat hij er altijd al van had gedroomd.', 'Omdat het goedkoop was.', 'Omdat {name2} het ook deed.'] },
+      { type: 'true_false', question: '{name} gaf op toen {hobby} moeilijk was.', answer: 'Onwaar. {name} maakte fouten maar gaf niet op.', correctBool: false },
+      { type: 'fill_blank', question: 'Na drie maanden had {name} zijn ___.', answer: 'certificaat' },
+      { type: 'open', question: 'Wat adviseert {name} aan andere mensen?', answer: '{name} raadt iedereen aan om een nieuwe hobby te proberen.' },
+    ],
+  },
+  // ── A2 — Travel ──────────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Een Weekend in {city}',
+    level: 'A2',
+    topic: 'travel',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} en {name2} besloten een weekend naar {city} te gaan.', translation: '{name} and {name2} decided to go to {city} for a weekend.' },
+        { text: 'Ze hadden het al lang gepland.', translation: 'They had planned it for a long time.' },
+        { text: '{name} boekte een hotel in het centrum van {city}.', translation: '{name} booked a hotel in the centre of {city}.' },
+        { text: 'Het hotel had goede recensies op internet.', translation: 'The hotel had good reviews on the internet.' },
+        { text: 'Ze vertrokken op vrijdagavond na het werk.', translation: 'They left on Friday evening after work.' },
+      ]},
+      { sentences: [
+        { text: 'De reis naar {city} duurde twee uur met de trein.', translation: 'The journey to {city} took two hours by train.' },
+        { text: 'Onderweg praatten ze over hun plannen voor het weekend.', translation: 'On the way they talked about their plans for the weekend.' },
+        { text: 'Ze wilden musea bezoeken en lekker eten.', translation: 'They wanted to visit museums and eat well.' },
+        { text: 'Bij aankomst in {city} gingen ze meteen naar het hotel.', translation: 'On arrival in {city} they went straight to the hotel.' },
+        { text: 'De kamer was klein maar schoon en comfortabel.', translation: 'The room was small but clean and comfortable.' },
+        { text: 'Ze waren blij met hun keuze.', translation: 'They were happy with their choice.' },
+      ]},
+      { sentences: [
+        { text: 'Op zaterdag begonnen ze vroeg.', translation: 'On Saturday they started early.' },
+        { text: 'Na het ontbijt gingen ze naar een museum.', translation: 'After breakfast they went to a museum.' },
+        { text: 'Het museum was geweldig en ze leerden veel.', translation: 'The museum was wonderful and they learned a lot.' },
+        { text: 'In de middag wandelden ze door de oude binnenstad.', translation: 'In the afternoon they walked through the old city centre.' },
+        { text: 'Ze bewonderden de historische gebouwen en grachten.', translation: 'They admired the historical buildings and canals.' },
+        { text: '{name} maakte veel foto\'s met zijn telefoon.', translation: '{name} took many photos with his phone.' },
+      ]},
+      { sentences: [
+        { text: 'Op zaterdagavond gingen ze naar een restaurant.', translation: 'On Saturday evening they went to a restaurant.' },
+        { text: 'Ze bestelden {food} en een glas wijn.', translation: 'They ordered {food} and a glass of wine.' },
+        { text: 'Het eten was uitstekend.', translation: 'The food was excellent.' },
+        { text: 'Na het eten wandelden ze langs de verlichte grachten.', translation: 'After dinner they walked along the illuminated canals.' },
+        { text: 'De stad was prachtig in de avond.', translation: 'The city was beautiful in the evening.' },
+        { text: 'Ze genoten van elke minuut.', translation: 'They enjoyed every minute.' },
+      ]},
+      { sentences: [
+        { text: 'Op zondag bezochten ze een markt.', translation: 'On Sunday they visited a market.' },
+        { text: 'Ze kochten souvenirs voor hun familie.', translation: 'They bought souvenirs for their family.' },
+        { text: 'Na de lunch namen ze de trein terug naar huis.', translation: 'After lunch they took the train back home.' },
+        { text: 'In de trein waren ze allebei stil en moe.', translation: 'On the train they were both quiet and tired.' },
+        { text: 'Maar het was een geweldig weekend geweest.', translation: 'But it had been a wonderful weekend.' },
+        { text: 'Ze spraken al over hun volgende reis.', translation: 'They were already talking about their next trip.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Hoe lang duurde de reis naar {city}?', answer: 'Twee uur.', options: ['Een uur.', 'Twee uur.', 'Drie uur.', 'Vier uur.'] },
+      { type: 'fill_blank', question: 'In het restaurant bestelden ze {food} en een glas ___.', answer: 'wijn' },
+      { type: 'true_false', question: '{name} en {name2} waren teleurgesteld over het hotel.', answer: 'Onwaar. Ze waren blij met hun keuze.', correctBool: false },
+      { type: 'open', question: 'Wat deden {name} en {name2} op zaterdagavond?', answer: 'Ze gingen naar een restaurant en wandelden daarna langs de verlichte grachten.' },
+    ],
+  },
+  // ── A2 — Market ──────────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'De Boerenmarkt van {city}',
+    level: 'A2',
+    topic: 'market',
+    paragraphs: [
+      { sentences: [
+        { text: 'Elke {season} is er een grote boerenmarkt in {city}.', translation: 'Every {season} there is a large farmers\' market in {city}.' },
+        { text: '{name} werkt als {job} maar helpt in het weekend op de markt.', translation: '{name} works as a {job} but helps at the market at the weekend.' },
+        { text: 'Zijn familie heeft al jaren een kraam op de markt.', translation: 'His family has had a stall at the market for years.' },
+        { text: 'Ze verkopen verse groenten en fruit uit eigen tuin.', translation: 'They sell fresh vegetables and fruit from their own garden.' },
+        { text: '{name} vindt het leuk om klanten te helpen.', translation: '{name} enjoys helping customers.' },
+      ]},
+      { sentences: [
+        { text: 'Op de marktdag staat {name} om zes uur op.', translation: 'On market day {name} gets up at six o\'clock.' },
+        { text: 'Hij helpt de kraam op te bouwen.', translation: 'He helps to set up the stall.' },
+        { text: 'De producten worden mooi uitgestald.', translation: 'The products are displayed attractively.' },
+        { text: 'Om negen uur opent de markt.', translation: 'At nine o\'clock the market opens.' },
+        { text: 'Al snel komen de eerste klanten.', translation: 'Soon the first customers arrive.' },
+        { text: '{name} begroet iedereen vriendelijk.', translation: '{name} greets everyone in a friendly manner.' },
+      ]},
+      { sentences: [
+        { text: 'Een klant vraagt naar de prijs van de tomaten.', translation: 'A customer asks about the price of the tomatoes.' },
+        { text: '{name} legt uit dat ze twee euro per kilo kosten.', translation: '{name} explains that they cost two euros per kilo.' },
+        { text: 'De klant koopt een kilo en is tevreden.', translation: 'The customer buys a kilo and is satisfied.' },
+        { text: 'Later komt een vrouw die {food} wil kopen.', translation: 'Later a woman comes who wants to buy {food}.' },
+        { text: '{name} helpt haar met een glimlach.', translation: '{name} helps her with a smile.' },
+        { text: 'Ze bedankt hem en komt elke week terug.', translation: 'She thanks him and comes back every week.' },
+      ]},
+      { sentences: [
+        { text: 'In de middag is de markt het drukst.', translation: 'In the afternoon the market is busiest.' },
+        { text: 'Er zijn honderden mensen.', translation: 'There are hundreds of people.' },
+        { text: '{name} werkt hard om iedereen te helpen.', translation: '{name} works hard to help everyone.' },
+        { text: 'Hij weegt de groenten en rekent de prijzen uit.', translation: 'He weighs the vegetables and calculates the prices.' },
+        { text: 'Zijn collega {name2} helpt ook mee.', translation: 'His colleague {name2} also helps.' },
+        { text: 'Samen gaat het werk snel.', translation: 'Together the work goes quickly.' },
+      ]},
+      { sentences: [
+        { text: 'Om vier uur sluit de markt.', translation: 'At four o\'clock the market closes.' },
+        { text: '{name} en {name2} ruimen de kraam op.', translation: '{name} and {name2} clear up the stall.' },
+        { text: 'Ze zijn moe maar tevreden.', translation: 'They are tired but satisfied.' },
+        { text: 'Ze hebben bijna alles verkocht.', translation: 'They have sold almost everything.' },
+        { text: 'De overgebleven groenten geven ze aan de voedselbank.', translation: 'The remaining vegetables they give to the food bank.' },
+        { text: '{name} is trots op zijn familie en hun werk op de markt.', translation: '{name} is proud of his family and their work at the market.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Hoe laat opent de markt?', answer: 'Om negen uur.', options: ['Om zeven uur.', 'Om acht uur.', 'Om negen uur.', 'Om tien uur.'] },
+      { type: 'fill_blank', question: 'De tomaten kosten twee euro per ___.', answer: 'kilo' },
+      { type: 'true_false', question: '{name} werkt elke dag op de markt.', answer: 'Onwaar. {name} helpt alleen in het weekend op de markt.', correctBool: false },
+      { type: 'open', question: 'Wat doen {name} en {name2} met de overgebleven groenten?', answer: 'Ze geven de overgebleven groenten aan de voedselbank.' },
+    ],
+  },
+  // ── A2 — Dutch culture ───────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Sinterklaas in {city}',
+    level: 'A2',
+    topic: 'Dutch culture',
+    paragraphs: [
+      { sentences: [
+        { text: 'In {month} is het Sinterklaasfeest in Nederland.', translation: 'In {month} it is the Sinterklaas celebration in the Netherlands.' },
+        { text: '{name} woont in {city} en viert Sinterklaas met zijn familie.', translation: '{name} lives in {city} and celebrates Sinterklaas with his family.' },
+        { text: 'Sinterklaas is een oud en geliefd feest.', translation: 'Sinterklaas is an old and beloved celebration.' },
+        { text: 'Kinderen zetten hun schoen bij de open haard.', translation: 'Children put their shoe by the fireplace.' },
+        { text: 'Ze hopen op cadeautjes van Sinterklaas.', translation: 'They hope for presents from Sinterklaas.' },
+      ]},
+      { sentences: [
+        { text: 'Een paar weken voor het feest komt Sinterklaas aan in Nederland.', translation: 'A few weeks before the celebration Sinterklaas arrives in the Netherlands.' },
+        { text: 'Hij komt met zijn boot vanuit Spanje.', translation: 'He comes by boat from Spain.' },
+        { text: 'In {city} is er een grote intocht.', translation: 'In {city} there is a big arrival parade.' },
+        { text: '{name} gaat met zijn neefje naar de intocht kijken.', translation: '{name} goes with his nephew to watch the arrival.' },
+        { text: 'Er zijn veel mensen op straat.', translation: 'There are many people in the street.' },
+        { text: 'De kinderen zijn erg opgewonden.', translation: 'The children are very excited.' },
+      ]},
+      { sentences: [
+        { text: 'Thuis maakt de familie van {name} pepernoten.', translation: 'At home {name}\'s family makes pepernoten (spiced biscuits).' },
+        { text: 'Pepernoten zijn kleine, ronde koekjes met specerijen.', translation: 'Pepernoten are small, round biscuits with spices.' },
+        { text: 'Ze ruiken heerlijk als ze uit de oven komen.', translation: 'They smell wonderful when they come out of the oven.' },
+        { text: '{name} helpt zijn moeder in de keuken.', translation: '{name} helps his mother in the kitchen.' },
+        { text: 'Ze maken ook chocoladeletters.', translation: 'They also make chocolate letters.' },
+        { text: 'Elke persoon krijgt de letter van zijn naam.', translation: 'Each person gets the letter of their name.' },
+      ]},
+      { sentences: [
+        { text: 'Op de avond van vijf december is het Sinterklaasavond.', translation: 'On the evening of the fifth of December it is Sinterklaas Eve.' },
+        { text: 'De familie komt samen bij {name} thuis.', translation: 'The family comes together at {name}\'s home.' },
+        { text: 'Er zijn cadeautjes voor iedereen.', translation: 'There are presents for everyone.' },
+        { text: 'Bij elk cadeau hoort een gedicht.', translation: 'With each present there is a poem.' },
+        { text: 'De gedichten zijn grappig en persoonlijk.', translation: 'The poems are funny and personal.' },
+        { text: '{name} leest zijn gedicht hardop voor.', translation: '{name} reads his poem aloud.' },
+      ]},
+      { sentences: [
+        { text: 'Na het uitpakken eten ze samen {food}.', translation: 'After unwrapping they eat {food} together.' },
+        { text: 'Ze drinken warme chocolademelk.', translation: 'They drink hot chocolate milk.' },
+        { text: 'Het is een gezellige avond.', translation: 'It is a cosy evening.' },
+        { text: '{name} vindt Sinterklaas het mooiste feest van het jaar.', translation: '{name} thinks Sinterklaas is the most beautiful celebration of the year.' },
+        { text: 'Het brengt de familie bij elkaar.', translation: 'It brings the family together.' },
+        { text: 'Volgend jaar kijkt hij er al naar uit.', translation: 'He is already looking forward to next year.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Waar komt Sinterklaas vandaan?', answer: 'Uit Spanje.', options: ['Uit Duitsland.', 'Uit Spanje.', 'Uit België.', 'Uit Engeland.'] },
+      { type: 'fill_blank', question: 'Bij elk cadeau hoort een ___.', answer: 'gedicht' },
+      { type: 'true_false', question: 'Pepernoten zijn grote, vierkante koekjes.', answer: 'Onwaar. Pepernoten zijn kleine, ronde koekjes met specerijen.', correctBool: false },
+      { type: 'open', question: 'Waarom vindt {name} Sinterklaas het mooiste feest?', answer: '{name} vindt Sinterklaas het mooiste feest omdat het de familie bij elkaar brengt.' },
+    ],
+  },
+];
+
+/**
+ * Generate a unique story from a template by filling in random variables.
+ * Returns null if no suitable template is found (shouldn't happen).
+ */
+function generateProceduralStory(
+  level: 'A1' | 'A2',
+  topic: string,
+  existingTitles: string[]
+): Story | null {
+  const normalised = existingTitles.map((t) => t.toLowerCase().trim());
+
+  // Find templates matching level + topic
+  let templates = STORY_TEMPLATES.filter(
+    (t) => t.level === level && t.topic === topic
+  );
+
+  // Relax topic if needed
+  if (templates.length === 0) {
+    templates = STORY_TEMPLATES.filter((t) => t.level === level);
+  }
+
+  // Relax level if still nothing
+  if (templates.length === 0) {
+    templates = [...STORY_TEMPLATES];
+  }
+
+  if (templates.length === 0) return null;
+
+  // Try up to 20 times to generate a story with a unique title
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const template = pick(templates);
+    const vars = makeVars();
+
+    const title = fill(template.titleTemplate, vars);
+    if (normalised.includes(title.toLowerCase().trim())) continue;
+
+    // Build the story
+    const story: Story = {
+      id: generateId(),
+      title,
+      level: template.level,
+      topic: template.topic,
+      paragraphs: template.paragraphs.map((p) => ({
+        id: generateId(),
+        sentences: p.sentences.map((s) => ({
+          id: generateId(),
+          text: fill(s.text, vars),
+          translation: fill(s.translation, vars),
+        })),
+      })),
+      questions: template.questions.map((q) => ({
+        id: generateId(),
+        type: q.type,
+        question: fill(q.question, vars),
+        answer: fill(q.answer, vars),
+        ...(q.options ? { options: q.options.map((o) => fill(o, vars)) } : {}),
+        ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
+      })),
+    };
+
+    return story;
+  }
+
+  return null;
+}
+
 // Get a single fallback story matching level/topic, excluding already-seen titles
 function getDefaultStory(
   level: 'A1' | 'A2',
@@ -877,7 +1466,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ story: aiStory });
     }
 
-    // Fall back to pre-written pool
+    // Try procedural generation (unique stories from templates, no API key needed)
+    const proceduralStory = generateProceduralStory(level, topic, existingTitles);
+    if (proceduralStory) {
+      return NextResponse.json({ story: proceduralStory });
+    }
+
+    // Last resort: pre-written static pool (may repeat if all seen)
     const fallbackStory = getDefaultStory(level, topic, existingTitles);
     return NextResponse.json({ story: fallbackStory });
   } catch (error) {
