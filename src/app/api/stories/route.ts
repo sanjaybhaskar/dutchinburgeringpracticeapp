@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Story, Paragraph, Sentence, ComprehensionQuestion, QuestionType, StoryTopic } from '@/app/types/story';
+import { Story, ComprehensionQuestion, QuestionType, StoryTopic } from '@/app/types/story';
 
 // Generate a unique ID
 function generateId(): string {
@@ -21,7 +21,7 @@ type RawQuestion = {
 };
 type RawStory = {
   title: string;
-  level: 'A1' | 'A2';
+  level: 'A1' | 'A2' | 'B1' | 'B2';
   topic: StoryTopic | string;
   paragraphs: RawParagraph[];
   questions: RawQuestion[];
@@ -686,7 +686,7 @@ function hydrateStory(raw: RawStory): Story {
   return {
     id: generateId(),
     title: raw.title,
-    level: raw.level,
+    level: raw.level as 'A1' | 'A2' | 'B1' | 'B2',
     topic: raw.topic,
     paragraphs: raw.paragraphs.map((p) => ({
       id: generateId(),
@@ -799,7 +799,7 @@ type RawSentenceTemplate = { text: string; translation: string };
 type RawParagraphTemplate = { sentences: RawSentenceTemplate[] };
 type RawStoryTemplate = {
   titleTemplate: string;
-  level: 'A1' | 'A2';
+  level: 'A1' | 'A2' | 'B1' | 'B2';
   topic: StoryTopic | string;
   paragraphs: RawParagraphTemplate[];
   questions: RawQuestion[];
@@ -1228,6 +1228,218 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
       { type: 'open', question: 'Waarom vindt {name} Sinterklaas het mooiste feest?', answer: '{name} vindt Sinterklaas het mooiste feest omdat het de familie bij elkaar brengt.' },
     ],
   },
+  // ── B1 — Healthcare ──────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Bij de Huisarts in {city}',
+    level: 'B1',
+    topic: 'healthcare',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} woont al twee jaar in {city} en heeft een vaste huisarts.', translation: '{name} has lived in {city} for two years and has a regular GP.' },
+        { text: 'In Nederland is de huisarts de eerste stap in de gezondheidszorg.', translation: 'In the Netherlands, the GP is the first step in healthcare.' },
+        { text: 'Je kunt niet zomaar naar een specialist gaan; je hebt een verwijzing nodig.', translation: 'You cannot just go to a specialist; you need a referral.' },
+        { text: '{name} heeft al een tijdje last van hoofdpijn en vermoeidheid.', translation: '{name} has been suffering from headaches and fatigue for a while.' },
+        { text: 'Hij besluit een afspraak te maken bij de huisarts.', translation: 'He decides to make an appointment with the GP.' },
+      ]},
+      { sentences: [
+        { text: 'Bij de receptie vraagt {name} om een afspraak.', translation: 'At the reception {name} asks for an appointment.' },
+        { text: 'De assistente vraagt naar zijn klachten en hoe lang hij er al last van heeft.', translation: 'The assistant asks about his complaints and how long he has had them.' },
+        { text: 'Ze geeft hem een afspraak voor de volgende dag.', translation: 'She gives him an appointment for the next day.' },
+        { text: 'In Nederland werkt de huisartsenpraktijk met een triagesysteem.', translation: 'In the Netherlands, the GP practice works with a triage system.' },
+        { text: 'Spoedeisende klachten worden dezelfde dag behandeld.', translation: 'Urgent complaints are treated the same day.' },
+        { text: 'Minder urgente klachten krijgen een afspraak binnen een paar dagen.', translation: 'Less urgent complaints get an appointment within a few days.' },
+      ]},
+      { sentences: [
+        { text: 'De volgende dag zit {name} in de wachtkamer.', translation: 'The next day {name} sits in the waiting room.' },
+        { text: 'De huisarts roept hem na tien minuten.', translation: 'The GP calls him after ten minutes.' },
+        { text: 'De arts luistert aandachtig naar zijn klachten.', translation: 'The doctor listens carefully to his complaints.' },
+        { text: 'Ze stelt gerichte vragen over zijn slaappatroon, eetgewoonten en stress.', translation: 'She asks targeted questions about his sleep pattern, eating habits and stress.' },
+        { text: 'Daarna doet ze een lichamelijk onderzoek.', translation: 'Then she does a physical examination.' },
+        { text: 'Ze meet zijn bloeddruk en controleert zijn reflexen.', translation: 'She measures his blood pressure and checks his reflexes.' },
+      ]},
+      { sentences: [
+        { text: 'De huisarts vermoedt dat de klachten door stress worden veroorzaakt.', translation: 'The GP suspects that the complaints are caused by stress.' },
+        { text: 'Ze adviseert {name} om meer te bewegen en beter te slapen.', translation: 'She advises {name} to exercise more and sleep better.' },
+        { text: 'Ze schrijft ook een bloedonderzoek voor om andere oorzaken uit te sluiten.', translation: 'She also prescribes a blood test to rule out other causes.' },
+        { text: '{name} krijgt een verwijzing naar het laboratorium.', translation: '{name} receives a referral to the laboratory.' },
+        { text: 'De uitslag is binnen drie werkdagen beschikbaar via het patiëntenportaal.', translation: 'The results are available within three working days via the patient portal.' },
+        { text: '{name} kan de uitslag online inzien of de praktijk bellen.', translation: '{name} can view the results online or call the practice.' },
+      ]},
+      { sentences: [
+        { text: 'In Nederland is iedereen verplicht een zorgverzekering te hebben.', translation: 'In the Netherlands, everyone is required to have health insurance.' },
+        { text: 'De basisverzekering dekt de meeste medische kosten.', translation: 'The basic insurance covers most medical costs.' },
+        { text: 'Je betaalt wel een eigen risico van vierhonderd vijftig euro per jaar.', translation: 'You do pay an excess of four hundred and fifty euros per year.' },
+        { text: 'Bezoeken aan de huisarts zijn gratis en vallen niet onder het eigen risico.', translation: 'Visits to the GP are free and do not fall under the excess.' },
+        { text: '{name} is blij dat hij goed verzekerd is.', translation: '{name} is glad that he is well insured.' },
+        { text: 'Hij begrijpt nu beter hoe het Nederlandse zorgstelsel werkt.', translation: 'He now better understands how the Dutch healthcare system works.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Wat heb je nodig om naar een specialist te gaan in Nederland?', answer: 'Een verwijzing van de huisarts.', options: ['Een afspraak bij de specialist zelf.', 'Een verwijzing van de huisarts.', 'Toestemming van de zorgverzekeraar.', 'Een recept van de apotheek.'] },
+      { type: 'true_false', question: 'Bezoeken aan de huisarts vallen onder het eigen risico.', answer: 'Onwaar. Bezoeken aan de huisarts zijn gratis en vallen niet onder het eigen risico.', correctBool: false },
+      { type: 'fill_blank', question: 'In Nederland is iedereen verplicht een ___ te hebben.', answer: 'zorgverzekering' },
+      { type: 'open', question: 'Wat adviseert de huisarts aan {name} en waarom schrijft ze een bloedonderzoek voor?', answer: 'De huisarts adviseert {name} meer te bewegen en beter te slapen. Ze schrijft een bloedonderzoek voor om andere oorzaken van de klachten uit te sluiten.' },
+    ],
+  },
+  // ── B1 — Housing ─────────────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Een Huurwoning Zoeken in {city}',
+    level: 'B1',
+    topic: 'housing',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} is {job} en woont al drie jaar in {city}.', translation: '{name} is a {job} and has lived in {city} for three years.' },
+        { text: 'Hij huurt momenteel een kamer, maar wil graag een zelfstandige woning.', translation: 'He currently rents a room, but would like an independent home.' },
+        { text: 'In Nederland is de woningmarkt erg krap, vooral in de grote steden.', translation: 'In the Netherlands, the housing market is very tight, especially in the big cities.' },
+        { text: 'Er zijn twee soorten huurwoningen: sociale huurwoningen en vrije sector woningen.', translation: 'There are two types of rental homes: social housing and private sector homes.' },
+        { text: 'Voor sociale huurwoningen moet je je inschrijven bij een woningcorporatie.', translation: 'For social housing you must register with a housing corporation.' },
+      ]},
+      { sentences: [
+        { text: '{name} schrijft zich in bij de woningcorporatie in {city}.', translation: '{name} registers with the housing corporation in {city}.' },
+        { text: 'Hij krijgt te horen dat de wachttijd gemiddeld acht jaar is.', translation: 'He is told that the average waiting time is eight years.' },
+        { text: 'Dat is erg lang, dus besluit hij ook te zoeken in de vrije sector.', translation: 'That is very long, so he also decides to search in the private sector.' },
+        { text: 'Vrije sector woningen zijn duurder, maar je kunt er sneller in terecht.', translation: 'Private sector homes are more expensive, but you can move in more quickly.' },
+        { text: 'Hij zoekt op woningwebsites en meldt zich aan bij een makelaar.', translation: 'He searches on housing websites and registers with an estate agent.' },
+        { text: 'De makelaar vraagt om zijn inkomensgegevens en arbeidscontract.', translation: 'The estate agent asks for his income details and employment contract.' },
+      ]},
+      { sentences: [
+        { text: 'Na twee weken vindt {name} een appartement van vijfenzestig vierkante meter.', translation: 'After two weeks {name} finds an apartment of sixty-five square metres.' },
+        { text: 'De huur is duizend tweehonderd euro per maand, exclusief servicekosten.', translation: 'The rent is one thousand two hundred euros per month, excluding service charges.' },
+        { text: 'Hij gaat op bezichtiging en is tevreden over de staat van de woning.', translation: 'He goes for a viewing and is satisfied with the condition of the property.' },
+        { text: 'De verhuurder vraagt om een waarborgsom van twee maanden huur.', translation: 'The landlord asks for a deposit of two months\' rent.' },
+        { text: 'Dit is een gangbare praktijk in Nederland.', translation: 'This is common practice in the Netherlands.' },
+        { text: '{name} tekent het huurcontract en betaalt de waarborgsom.', translation: '{name} signs the rental contract and pays the deposit.' },
+      ]},
+      { sentences: [
+        { text: 'Als huurder heeft {name} rechten en plichten.', translation: 'As a tenant {name} has rights and obligations.' },
+        { text: 'De verhuurder is verantwoordelijk voor groot onderhoud.', translation: 'The landlord is responsible for major maintenance.' },
+        { text: '{name} is verantwoordelijk voor kleine reparaties en het schoonhouden van de woning.', translation: '{name} is responsible for minor repairs and keeping the property clean.' },
+        { text: 'Als er problemen zijn, moet hij dit schriftelijk melden aan de verhuurder.', translation: 'If there are problems, he must report this in writing to the landlord.' },
+        { text: 'Bij geschillen kan hij terecht bij de Huurcommissie.', translation: 'In case of disputes he can go to the Rent Tribunal.' },
+        { text: 'De Huurcommissie is een onafhankelijke instantie die huurders en verhuurders helpt.', translation: 'The Rent Tribunal is an independent body that helps tenants and landlords.' },
+      ]},
+      { sentences: [
+        { text: '{name} meldt zijn nieuwe adres aan bij de gemeente.', translation: '{name} registers his new address with the municipality.' },
+        { text: 'Dit is verplicht in Nederland; je moet je inschrijven in de Basisregistratie Personen.', translation: 'This is mandatory in the Netherlands; you must register in the Personal Records Database.' },
+        { text: 'Zonder inschrijving kun je geen uitkering, toeslagen of andere voorzieningen aanvragen.', translation: 'Without registration you cannot apply for benefits, allowances or other provisions.' },
+        { text: '{name} vraagt ook huurtoeslag aan bij de Belastingdienst.', translation: '{name} also applies for housing benefit from the Tax Authority.' },
+        { text: 'Huurtoeslag is een bijdrage van de overheid voor mensen met een laag inkomen.', translation: 'Housing benefit is a government contribution for people with a low income.' },
+        { text: 'Hij is blij dat hij eindelijk een eigen plek heeft in {city}.', translation: 'He is happy that he finally has his own place in {city}.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Wat is het verschil tussen sociale huur en vrije sector huur?', answer: 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', options: ['Sociale huurwoningen zijn groter dan vrije sector woningen.', 'Sociale huurwoningen zijn goedkoper maar hebben een lange wachttijd; vrije sector woningen zijn duurder maar sneller beschikbaar.', 'Vrije sector woningen worden beheerd door de gemeente.', 'Sociale huurwoningen zijn alleen voor studenten.'] },
+      { type: 'fill_blank', question: 'Bij geschillen tussen huurder en verhuurder kan men terecht bij de ___.', answer: 'Huurcommissie' },
+      { type: 'true_false', question: 'In Nederland is het verplicht om je nieuwe adres aan te melden bij de gemeente.', answer: 'Waar. Je moet je inschrijven in de Basisregistratie Personen.', correctBool: true },
+      { type: 'open', question: 'Wat zijn de rechten en plichten van {name} als huurder?', answer: 'De verhuurder is verantwoordelijk voor groot onderhoud. {name} is verantwoordelijk voor kleine reparaties en het schoonhouden van de woning. Bij problemen moet hij dit schriftelijk melden.' },
+    ],
+  },
+  // ── B2 — Work and rights ─────────────────────────────────────────────────────
+  {
+    titleTemplate: 'Werken in Nederland: Rechten en Plichten',
+    level: 'B2',
+    topic: 'work and rights',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} heeft een arbeidscontract getekend bij een bedrijf in {city}.', translation: '{name} has signed an employment contract with a company in {city}.' },
+        { text: 'In Nederland zijn de rechten van werknemers goed beschermd door de wet.', translation: 'In the Netherlands, the rights of employees are well protected by law.' },
+        { text: 'Het arbeidsrecht regelt de relatie tussen werkgever en werknemer.', translation: 'Employment law regulates the relationship between employer and employee.' },
+        { text: 'Elke werknemer heeft recht op een schriftelijk contract met duidelijke afspraken.', translation: 'Every employee has the right to a written contract with clear agreements.' },
+        { text: 'Hierin staan het salaris, de werktijden, het aantal vakantiedagen en de opzegtermijn.', translation: 'This includes the salary, working hours, number of holiday days and notice period.' },
+      ]},
+      { sentences: [
+        { text: 'In Nederland heeft elke werknemer recht op minimaal vier keer het aantal werkuren per week aan vakantiedagen.', translation: 'In the Netherlands, every employee is entitled to at least four times the number of working hours per week in holiday days.' },
+        { text: 'Voor een fulltime werknemer zijn dat minimaal twintig vakantiedagen per jaar.', translation: 'For a full-time employee that is at least twenty holiday days per year.' },
+        { text: 'Veel cao\'s bieden meer vakantiedagen dan het wettelijk minimum.', translation: 'Many collective agreements offer more holiday days than the legal minimum.' },
+        { text: '{name} werkt veertig uur per week en heeft recht op vijfentwintig vakantiedagen.', translation: '{name} works forty hours per week and is entitled to twenty-five holiday days.' },
+        { text: 'Hij moet vakantiedagen minimaal twee weken van tevoren aanvragen.', translation: 'He must request holiday days at least two weeks in advance.' },
+        { text: 'De werkgever kan een verzoek weigeren als het bedrijfsbelang dit vereist.', translation: 'The employer can refuse a request if the business interest requires it.' },
+      ]},
+      { sentences: [
+        { text: 'Bij ziekte heeft {name} recht op doorbetaling van zijn loon.', translation: 'In case of illness {name} is entitled to continued payment of his salary.' },
+        { text: 'De werkgever is verplicht het loon gedurende twee jaar door te betalen bij ziekte.', translation: 'The employer is obliged to continue paying the salary for two years in case of illness.' },
+        { text: 'In het eerste jaar ontvangt de werknemer honderd procent van zijn loon.', translation: 'In the first year the employee receives one hundred percent of his salary.' },
+        { text: 'In het tweede jaar is dit zeventig procent.', translation: 'In the second year this is seventy percent.' },
+        { text: 'De werknemer moet zich ziekmelden bij de werkgever en de bedrijfsarts.', translation: 'The employee must report sick to the employer and the occupational health physician.' },
+        { text: 'De bedrijfsarts begeleidt het re-integratieproces.', translation: 'The occupational health physician supervises the reintegration process.' },
+      ]},
+      { sentences: [
+        { text: 'Als {name} ontslagen wordt, heeft hij recht op een transitievergoeding.', translation: 'If {name} is dismissed, he is entitled to a transition payment.' },
+        { text: 'De hoogte van de transitievergoeding hangt af van het salaris en de duur van het dienstverband.', translation: 'The amount of the transition payment depends on the salary and the duration of employment.' },
+        { text: 'Bij ontslag op staande voet vervalt dit recht.', translation: 'In case of summary dismissal this right lapses.' },
+        { text: 'Ontslag op staande voet is alleen mogelijk bij ernstig wangedrag.', translation: 'Summary dismissal is only possible in case of serious misconduct.' },
+        { text: '{name} kan bij onrechtmatig ontslag naar de kantonrechter stappen.', translation: '{name} can go to the subdistrict court in case of unlawful dismissal.' },
+        { text: 'Hij kan ook terecht bij het UWV voor een WW-uitkering na ontslag.', translation: 'He can also go to the UWV for unemployment benefit after dismissal.' },
+      ]},
+      { sentences: [
+        { text: 'Naast rechten heeft {name} ook plichten als werknemer.', translation: 'In addition to rights, {name} also has obligations as an employee.' },
+        { text: 'Hij moet zijn werk naar behoren uitvoeren en instructies van de werkgever opvolgen.', translation: 'He must perform his work properly and follow instructions from the employer.' },
+        { text: 'Hij mag geen vertrouwelijke bedrijfsinformatie delen met derden.', translation: 'He may not share confidential company information with third parties.' },
+        { text: 'Bij een concurrentiebeding mag hij na ontslag niet bij een concurrent werken.', translation: 'With a non-compete clause he may not work for a competitor after dismissal.' },
+        { text: '{name} begrijpt dat kennis van het arbeidsrecht hem beschermt.', translation: '{name} understands that knowledge of employment law protects him.' },
+        { text: 'Hij raadt andere nieuwkomers aan om zich goed te informeren over hun rechten.', translation: 'He recommends other newcomers to inform themselves well about their rights.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Hoeveel vakantiedagen heeft een fulltime werknemer minimaal recht op per jaar?', answer: 'Twintig vakantiedagen.', options: ['Tien vakantiedagen.', 'Vijftien vakantiedagen.', 'Twintig vakantiedagen.', 'Vijfentwintig vakantiedagen.'] },
+      { type: 'true_false', question: 'Bij ziekte is de werkgever verplicht het loon gedurende twee jaar door te betalen.', answer: 'Waar. In het eerste jaar is dit 100% en in het tweede jaar 70% van het loon.', correctBool: true },
+      { type: 'fill_blank', question: 'Bij ontslag heeft een werknemer recht op een ___.', answer: 'transitievergoeding' },
+      { type: 'open', question: 'Wat zijn de plichten van {name} als werknemer?', answer: '{name} moet zijn werk naar behoren uitvoeren, instructies opvolgen, geen vertrouwelijke informatie delen en zich houden aan een eventueel concurrentiebeding.' },
+    ],
+  },
+  // ── B2 — Civic integration ───────────────────────────────────────────────────
+  {
+    titleTemplate: 'Het Inburgeringsexamen in Nederland',
+    level: 'B2',
+    topic: 'civic integration',
+    paragraphs: [
+      { sentences: [
+        { text: '{name} is drie jaar geleden naar Nederland gekomen vanuit het buitenland.', translation: '{name} came to the Netherlands from abroad three years ago.' },
+        { text: 'Als inburgeringsplichtige moet hij het inburgeringsexamen halen.', translation: 'As someone required to integrate, he must pass the civic integration exam.' },
+        { text: 'Het inburgeringsexamen bestaat uit verschillende onderdelen.', translation: 'The civic integration exam consists of various components.' },
+        { text: 'Hij moet Nederlands leren op minimaal B1-niveau.', translation: 'He must learn Dutch to at least B1 level.' },
+        { text: 'Daarnaast moet hij kennis hebben van de Nederlandse samenleving.', translation: 'In addition, he must have knowledge of Dutch society.' },
+      ]},
+      { sentences: [
+        { text: 'Het examen bestaat uit vijf onderdelen: lezen, luisteren, schrijven, spreken en kennis van de Nederlandse samenleving.', translation: 'The exam consists of five components: reading, listening, writing, speaking and knowledge of Dutch society.' },
+        { text: 'Het onderdeel Kennis van de Nederlandse Samenleving (KNS) toetst kennis over democratie, rechten en plichten.', translation: 'The Knowledge of Dutch Society (KNS) component tests knowledge of democracy, rights and obligations.' },
+        { text: 'Ook de Oriëntatie op de Nederlandse Arbeidsmarkt (ONA) is verplicht.', translation: 'The Orientation on the Dutch Labour Market (ONA) is also compulsory.' },
+        { text: '{name} volgt een inburgeringscursus bij een erkend taleninstituut in {city}.', translation: '{name} follows a civic integration course at an accredited language institute in {city}.' },
+        { text: 'De cursus duurt gemiddeld anderhalf jaar.', translation: 'The course lasts an average of one and a half years.' },
+        { text: 'De gemeente betaalt een deel van de kosten via de Wet Inburgering 2021.', translation: 'The municipality pays part of the costs through the Civic Integration Act 2021.' },
+      ]},
+      { sentences: [
+        { text: 'Onder de Wet Inburgering 2021 heeft de gemeente een actievere rol gekregen.', translation: 'Under the Civic Integration Act 2021, the municipality has been given a more active role.' },
+        { text: 'De gemeente stelt een persoonlijk plan op voor elke inburgeringsplichtige.', translation: 'The municipality draws up a personal plan for each person required to integrate.' },
+        { text: 'Dit plan houdt rekening met de achtergrond, opleiding en ambities van de persoon.', translation: 'This plan takes into account the background, education and ambitions of the person.' },
+        { text: '{name} heeft een plan gekregen met een leerroute gericht op werk.', translation: '{name} has received a plan with a learning route focused on work.' },
+        { text: 'Hij volgt naast de taalcursus ook een beroepsopleiding.', translation: 'In addition to the language course, he also follows a vocational training.' },
+        { text: 'Dit vergroot zijn kansen op de arbeidsmarkt aanzienlijk.', translation: 'This significantly increases his chances on the labour market.' },
+      ]},
+      { sentences: [
+        { text: 'Het inburgeringsexamen wordt afgenomen door DUO, de Dienst Uitvoering Onderwijs.', translation: 'The civic integration exam is administered by DUO, the Education Executive Agency.' },
+        { text: '{name} moet zich aanmelden via de website van DUO.', translation: '{name} must register via the DUO website.' },
+        { text: 'Hij kan de onderdelen in willekeurige volgorde afleggen.', translation: 'He can take the components in any order.' },
+        { text: 'Als hij een onderdeel niet haalt, mag hij het herkansen.', translation: 'If he does not pass a component, he may retake it.' },
+        { text: 'Hij heeft drie jaar de tijd om het volledige examen te halen.', translation: 'He has three years to pass the complete exam.' },
+        { text: 'Als hij niet slaagt, kan de gemeente een boete opleggen.', translation: 'If he does not succeed, the municipality can impose a fine.' },
+      ]},
+      { sentences: [
+        { text: 'Na het behalen van het inburgeringsexamen kan {name} een verblijfsvergunning voor onbepaalde tijd aanvragen.', translation: 'After passing the civic integration exam, {name} can apply for a permanent residence permit.' },
+        { text: 'Dit geeft hem meer rechten en zekerheid in Nederland.', translation: 'This gives him more rights and security in the Netherlands.' },
+        { text: 'Na vijf jaar legaal verblijf kan hij ook de Nederlandse nationaliteit aanvragen.', translation: 'After five years of legal residence he can also apply for Dutch nationality.' },
+        { text: 'Naturalisatie vereist onder andere het afleggen van de naturalisatietoets.', translation: 'Naturalisation requires, among other things, passing the naturalisation test.' },
+        { text: '{name} is gemotiveerd om te slagen en een volwaardig lid van de Nederlandse samenleving te worden.', translation: '{name} is motivated to succeed and become a full member of Dutch society.' },
+        { text: 'Hij begrijpt dat inburgering niet alleen een verplichting is, maar ook een kans.', translation: 'He understands that civic integration is not only an obligation, but also an opportunity.' },
+      ]},
+    ],
+    questions: [
+      { type: 'multiple_choice', question: 'Welke instantie neemt het inburgeringsexamen af?', answer: 'DUO (Dienst Uitvoering Onderwijs).', options: ['De gemeente.', 'DUO (Dienst Uitvoering Onderwijs).', 'Het UWV.', 'De IND.'] },
+      { type: 'fill_blank', question: 'Na vijf jaar legaal verblijf kan {name} de Nederlandse ___ aanvragen.', answer: 'nationaliteit' },
+      { type: 'true_false', question: 'Onder de Wet Inburgering 2021 heeft de inburgeringsplichtige zelf de volledige verantwoordelijkheid voor zijn inburgering.', answer: 'Onwaar. Onder de Wet Inburgering 2021 heeft de gemeente een actievere rol gekregen en stelt zij een persoonlijk plan op.', correctBool: false },
+      { type: 'open', question: 'Wat zijn de gevolgen als {name} het inburgeringsexamen niet haalt binnen de gestelde termijn?', answer: 'Als {name} het inburgeringsexamen niet haalt binnen drie jaar, kan de gemeente een boete opleggen. Hij kan de onderdelen wel herkansen.' },
+    ],
+  },
 ];
 
 /**
@@ -1235,7 +1447,7 @@ const STORY_TEMPLATES: RawStoryTemplate[] = [
  * Returns null if no suitable template is found (shouldn't happen).
  */
 function generateProceduralStory(
-  level: 'A1' | 'A2',
+  level: 'A1' | 'A2' | 'B1' | 'B2',
   topic: string,
   existingTitles: string[]
 ): Story | null {
@@ -1298,7 +1510,7 @@ function generateProceduralStory(
 
 // Get a single fallback story matching level/topic, excluding already-seen titles
 function getDefaultStory(
-  level: 'A1' | 'A2',
+  level: 'A1' | 'A2' | 'B1' | 'B2',
   topic: string | undefined,
   existingTitles: string[]
 ): Story {
@@ -1340,41 +1552,51 @@ function getDefaultStory(
 // OpenAI story generation
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function generateStoryWithOpenAI(
-  level: 'A1' | 'A2',
-  topic: string,
-  existingTitles: string[]
-): Promise<Story | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared prompt builder for LLM story generation
+// ─────────────────────────────────────────────────────────────────────────────
 
+function buildStoryPrompt(level: 'A1' | 'A2' | 'B1' | 'B2', topic: string, existingTitles: string[]): string {
   const levelDesc =
     level === 'A1'
-      ? 'A1 beginner (very simple vocabulary, short sentences, present tense)'
-      : 'A2 elementary (simple vocabulary, some past tense, slightly longer sentences)';
+      ? 'A1 beginner (very simple vocabulary, short sentences, present tense only)'
+      : level === 'A2'
+      ? 'A2 elementary (simple vocabulary, some past tense, slightly longer sentences)'
+      : level === 'B1'
+      ? 'B1 intermediate (varied vocabulary, past and future tense, complex sentences, civic/formal language)'
+      : 'B2 upper-intermediate (rich vocabulary, complex grammar, formal register, exam-level difficulty)';
+
+  const inburgeringContext =
+    level === 'B1' || level === 'B2'
+      ? `This text is for the Dutch civic integration exam (inburgeringsexamen). It should cover realistic scenarios that immigrants encounter in the Netherlands: official procedures, rights and obligations, institutions, formal communication, and Dutch society. Use formal Dutch register where appropriate.`
+      : `This text is for Dutch language learners preparing for civic integration. Keep it accessible but realistic.`;
 
   const avoidTitles =
     existingTitles.length > 0
       ? `Do NOT use any of these titles: ${existingTitles.join(', ')}.`
       : '';
 
-  const prompt = `You are a Dutch language teacher creating a reading story for learners.
+  return `You are a Dutch language teacher creating a reading comprehension text for the Dutch civic integration exam (inburgeringsexamen).
 
-Write ONE Dutch story at ${levelDesc} level about the topic: "${topic}".
+Write ONE Dutch text at ${levelDesc} level about the topic: "${topic}".
+
+${inburgeringContext}
 
 Requirements:
-- The story MUST be at least 500 words in Dutch
+- The text MUST be at least 500 words in Dutch
 - 5 to 6 paragraphs, each with 5 to 8 sentences
 - Each sentence must have an English translation
 - Include exactly 4 comprehension questions in Dutch, one of each type:
   1. "multiple_choice" — provide 4 options (one correct), field "options": ["...", "...", "...", "..."]
-  2. "fill_blank" — sentence with ___ for the missing word, field "answer" is the missing word
+  2. "fill_blank" — sentence with ___ for the missing word, field "answer" is the missing word only
   3. "true_false" — a statement that is true or false, field "correctBool": true or false, "answer" explains why
-  4. "open" — open-ended question with a full sentence answer
-- The story should be realistic, engaging, and culturally relevant to the Netherlands
+  4. "open" — open-ended question requiring a full sentence answer
+- Questions should test real comprehension, not just word recognition
+- For B1/B2: include at least one question about implied meaning or inference
+- The text should be realistic, culturally relevant to the Netherlands, and exam-appropriate
 - ${avoidTitles}
 
-Respond ONLY with valid JSON in this exact format:
+Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
 {
   "title": "Story title in Dutch",
   "paragraphs": [
@@ -1391,35 +1613,20 @@ Respond ONLY with valid JSON in this exact format:
     { "type": "open", "question": "Dutch question?", "answer": "Full Dutch answer." }
   ]
 }`;
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Parse LLM JSON response into a Story object
+// ─────────────────────────────────────────────────────────────────────────────
+
+function parseLLMStory(content: string, level: 'A1' | 'A2' | 'B1' | 'B2', topic: string): Story | null {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.8,
-        max_tokens: 3000,
-      }),
-    });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) return null;
-
-    // Extract JSON from the response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    const story: Story = {
+    return {
       id: generateId(),
       title: parsed.title || 'Onbekend verhaal',
       level,
@@ -1441,9 +1648,100 @@ Respond ONLY with valid JSON in this exact format:
         ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
       })),
     };
-
-    return story;
   } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenAI story generation
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generateStoryWithOpenAI(
+  level: 'A1' | 'A2' | 'B1' | 'B2',
+  topic: string,
+  existingTitles: string[]
+): Promise<Story | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const prompt = buildStoryPrompt(level, topic, existingTitles);
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.8,
+        max_tokens: 3500,
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    return parseLLMStory(content, level, topic);
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Groq free LLM story generation (llama-3.1-8b-instant — free tier)
+// Sign up at https://console.groq.com to get a free API key (GROQ_API_KEY)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function generateStoryWithGroq(
+  level: 'A1' | 'A2' | 'B1' | 'B2',
+  topic: string,
+  existingTitles: string[]
+): Promise<Story | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+
+  const prompt = buildStoryPrompt(level, topic, existingTitles);
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a Dutch language teacher. Always respond with valid JSON only, no markdown code blocks, no extra text.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.8,
+        max_tokens: 3500,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Groq API error:', response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return null;
+
+    return parseLLMStory(content, level, topic);
+  } catch (err) {
+    console.error('Groq generation error:', err);
     return null;
   }
 }
@@ -1455,24 +1753,29 @@ Respond ONLY with valid JSON in this exact format:
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const level: 'A1' | 'A2' = body.level || 'A1';
+    const level: 'A1' | 'A2' | 'B1' | 'B2' = body.level || 'A2';
     const topic: string = body.topic || 'daily life';
     const existingTitles: string[] = body.existingTitles || [];
 
-    // Try OpenAI first
+    // 1. Try OpenAI (if OPENAI_API_KEY is set)
     const aiStory = await generateStoryWithOpenAI(level, topic, existingTitles);
-
     if (aiStory) {
       return NextResponse.json({ story: aiStory });
     }
 
-    // Try procedural generation (unique stories from templates, no API key needed)
+    // 2. Try Groq free LLM (if GROQ_API_KEY is set)
+    const groqStory = await generateStoryWithGroq(level, topic, existingTitles);
+    if (groqStory) {
+      return NextResponse.json({ story: groqStory });
+    }
+
+    // 3. Try procedural generation (unique stories from templates, no API key needed)
     const proceduralStory = generateProceduralStory(level, topic, existingTitles);
     if (proceduralStory) {
       return NextResponse.json({ story: proceduralStory });
     }
 
-    // Last resort: pre-written static pool (may repeat if all seen)
+    // 4. Last resort: pre-written static pool (may repeat if all seen)
     const fallbackStory = getDefaultStory(level, topic, existingTitles);
     return NextResponse.json({ story: fallbackStory });
   } catch (error) {

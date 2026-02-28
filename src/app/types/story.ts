@@ -1,6 +1,16 @@
-// Types for the AI Story Reader app
+// Types for the Dutch Inburgering Practice app
 
-export type StoryTopic = 'daily life' | 'travel' | 'market' | 'Dutch culture';
+export type StoryTopic =
+  | 'daily life'
+  | 'travel'
+  | 'market'
+  | 'Dutch culture'
+  | 'healthcare'
+  | 'housing'
+  | 'work and rights'
+  | 'civic integration'
+  | 'education'
+  | 'finance and taxes';
 
 export interface Sentence {
   id: string;
@@ -30,7 +40,7 @@ export interface ComprehensionQuestion {
 export interface Story {
   id: string;
   title: string;
-  level: 'A1' | 'A2';
+  level: 'A1' | 'A2' | 'B1' | 'B2';
   topic: StoryTopic | string;
   paragraphs: Paragraph[];
   questions?: ComprehensionQuestion[];
@@ -43,7 +53,7 @@ export interface StoriesResponse {
 
 export interface OpenAIStoryRequest {
   count: number;
-  level: 'A1' | 'A2';
+  level: 'A1' | 'A2' | 'B1' | 'B2';
   topic?: StoryTopic | string;
   existingTitles?: string[];
 }

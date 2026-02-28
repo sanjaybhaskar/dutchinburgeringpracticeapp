@@ -12,6 +12,12 @@ const TOPICS: { value: StoryTopic; label: string; emoji: string }[] = [
   { value: 'travel', label: 'Travel', emoji: '✈️' },
   { value: 'market', label: 'Market', emoji: '🛒' },
   { value: 'Dutch culture', label: 'Dutch Culture', emoji: '🌷' },
+  { value: 'healthcare', label: 'Healthcare', emoji: '🏥' },
+  { value: 'housing', label: 'Housing', emoji: '🏘️' },
+  { value: 'work and rights', label: 'Work & Rights', emoji: '⚖️' },
+  { value: 'civic integration', label: 'Civic Integration', emoji: '🇳🇱' },
+  { value: 'education', label: 'Education', emoji: '📚' },
+  { value: 'finance and taxes', label: 'Finance & Taxes', emoji: '💶' },
 ];
 
 const PROGRESS_KEY = 'dutch-reader-progress';
@@ -85,7 +91,7 @@ export default function Home() {
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [translatingWord, setTranslatingWord] = useState(false);
 
-  const [level, setLevel] = useState<'A1' | 'A2'>('A1');
+  const [level, setLevel] = useState<'A1' | 'A2' | 'B1' | 'B2'>('A2');
   const [topic, setTopic] = useState<StoryTopic>('daily life');
   const [speed, setSpeed] = useState<PlaybackSpeed>('normal');
 
@@ -117,7 +123,7 @@ export default function Home() {
    * existingTitles is derived from the current history to avoid repeats.
    */
   const fetchStory = useCallback(
-    async (opts: { level: 'A1' | 'A2'; topic: string; existingTitles: string[] }) => {
+    async (opts: { level: 'A1' | 'A2' | 'B1' | 'B2'; topic: string; existingTitles: string[] }) => {
       setLoading(true);
       setError(null);
       setSelectedSentence(null);
@@ -348,7 +354,7 @@ export default function Home() {
     setSpeakingSentenceId(null);
   }, [currentIndex, stop]);
 
-  const handleLevelChange = (newLevel: 'A1' | 'A2') => {
+  const handleLevelChange = (newLevel: 'A1' | 'A2' | 'B1' | 'B2') => {
     setLevel(newLevel);
     // Reset history when level changes
     setStoryHistory([]);
@@ -404,14 +410,15 @@ export default function Home() {
       {/* Header */}
       <header className="bg-neutral-800 border-b border-neutral-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center mb-4">📚 Dutch Story Reader</h1>
+          <h1 className="text-2xl font-bold text-center mb-1">🇳🇱 Dutch Inburgering Practice</h1>
+          <p className="text-xs text-neutral-500 text-center mb-4">Civic integration exam preparation · Reading &amp; comprehension</p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             {/* Level selector */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-400">Level:</span>
               <div className="flex rounded-lg overflow-hidden border border-neutral-600">
-                {(['A1', 'A2'] as const).map((l) => (
+                {(['A1', 'A2', 'B1', 'B2'] as const).map((l) => (
                   <button
                     key={l}
                     onClick={() => handleLevelChange(l)}
@@ -523,7 +530,7 @@ export default function Home() {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-neutral-400 text-lg">Generating your story...</p>
+            <p className="text-neutral-400 text-lg">Generating your inburgering text...</p>
             <p className="text-neutral-500 text-sm mt-1">This may take a moment</p>
           </div>
         )}
@@ -562,7 +569,11 @@ export default function Home() {
                         className={`inline-block text-xs px-2 py-1 rounded font-medium ${
                           story.level === 'A1'
                             ? 'bg-green-900/60 text-green-400'
-                            : 'bg-blue-900/60 text-blue-400'
+                            : story.level === 'A2'
+                            ? 'bg-blue-900/60 text-blue-400'
+                            : story.level === 'B1'
+                            ? 'bg-orange-900/60 text-orange-400'
+                            : 'bg-red-900/60 text-red-400'
                         }`}
                       >
                         {story.level}

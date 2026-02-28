@@ -1,8 +1,8 @@
-# Active Context: AI Story Reader App
+# Active Context: Dutch Inburgering Practice App
 
 ## Current State
 
-**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, word translation, and procedural story generation (no API key needed)
+**Project Status**: ✅ Complete — Dutch civic integration (inburgering) exam practice app with exam-style texts, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, word translation, and multi-tier story generation (OpenAI → Groq free LLM → procedural → static pool)
 
 ## Recently Completed
 
@@ -28,12 +28,7 @@
     - [x] One story displayed at a time (replaced multi-story list)
     - [x] Topic selector: daily life, travel, market, Dutch culture
     - [x] Each story includes 4 comprehension questions with reveal-on-click answers
-    - [x] Reading progress tracked in localStorage:
-      - Sentences heard (subtly dimmed after being clicked/played)
-      - Stories fully read (all sentences heard)
-      - Progress bar per story (heard/total sentences)
-      - Stats panel in sidebar (stories read count, sentences heard count)
-      - Reset progress button
+    - [x] Reading progress tracked in localStorage
     - [x] Stories API returns a single story per request (not an array)
     - [x] OpenAI prompt: ≥500 words, 5-6 paragraphs, 4 comprehension questions
     - [x] Fallback pool: 8 pre-written stories (A1+A2, all 4 topics) each ≥500 words with Q&A
@@ -42,10 +37,6 @@
   - [x] **Update (Feb 2026) — Varied Q&A types + Next/Previous navigation:**
     - [x] `ComprehensionQuestion` type extended: `type` (open/multiple_choice/fill_blank/true_false), `options?`, `correctBool?`
     - [x] Each story has 4 questions, one of each type
-    - [x] Multiple choice: 4 options, click to select, auto-reveals answer, correct/wrong feedback
-    - [x] Fill in the blank: sentence with ___, reveal missing word on button click
-    - [x] True/False: statement with Waar/Onwaar reveal + explanation
-    - [x] Open: full-sentence answer revealed on button click
     - [x] Story history cache: array of fetched stories stored in state
     - [x] Next button: navigates forward in cache or fetches new unique story
     - [x] Previous button: navigates back in local cache (no re-fetch)
@@ -56,9 +47,21 @@
     - [x] Added `STORY_TEMPLATES` array: 8 templates (2 per topic × A1/A2) with `{var}` placeholders
     - [x] Word lists: 24 Dutch names, 15 cities, 10 foods, 10 hobbies, 10 jobs, seasons, months
     - [x] `generateProceduralStory()` fills templates with random vars, tries 20× for unique title
-    - [x] Titles include variable values (e.g. "Een Dag met Emma", "Een Reis naar Utrecht")
     - [x] API fallback chain: OpenAI → procedural generator → static pool
-    - [x] Effectively infinite unique stories without any API key
+  - [x] **Update (Feb 2026) — Dutch Inburgering Practice rebranding + exam content:**
+    - [x] Renamed app: "📚 Dutch Story Reader" → "🇳🇱 Dutch Inburgering Practice"
+    - [x] Added subtitle: "Civic integration exam preparation · Reading & comprehension"
+    - [x] Added 6 new inburgering topics: healthcare, housing, work and rights, civic integration, education, finance and taxes
+    - [x] Added B1 and B2 levels (exam-difficulty) alongside A1/A2
+    - [x] Level badge colors: A1=green, A2=blue, B1=orange, B2=red
+    - [x] Updated story prompt to be inburgering-focused with formal Dutch register for B1/B2
+    - [x] Added Groq free LLM API integration (`llama-3.1-8b-instant`) — set `GROQ_API_KEY` env var
+    - [x] New API fallback chain: OpenAI → Groq → procedural → static pool
+    - [x] Added 4 new B1/B2 story templates: healthcare (B1), housing (B1), work & rights (B2), civic integration (B2)
+    - [x] `buildStoryPrompt()` shared function for both OpenAI and Groq
+    - [x] `parseLLMStory()` shared JSON parser for both LLM responses
+    - [x] Story type updated: `level: 'A1' | 'A2' | 'B1' | 'B2'`
+    - [x] `StoryTopic` type updated with 6 new topics
 
 ## Current Structure
 
@@ -68,7 +71,7 @@
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
 | `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story, ComprehensionQuestion, QuestionType, StoryTopic) | ✅ Updated |
-| `src/app/api/stories/route.ts` | Story generation API — single story, topic param, varied Q&A types, 8-story fallback pool | ✅ Updated |
+| `src/app/api/stories/route.ts` | Story generation API — multi-tier LLM fallback, inburgering prompt, B1/B2 templates | ✅ Updated |
 | `src/app/api/translate/route.ts` | Word/phrase translation API (OpenAI + MyMemory free API + dictionary fallback) | ✅ Ready |
 | `src/app/hooks/useSpeech.ts` | TTS hook with `playSequence()` and speed support | ✅ Ready |
 | `src/app/lib/tokenize.ts` | Sentence tokenization utility | ✅ Ready |
@@ -77,13 +80,13 @@
 ## Data Model
 
 ```typescript
-type StoryTopic = 'daily life' | 'travel' | 'market' | 'Dutch culture';
+type StoryTopic = 'daily life' | 'travel' | 'market' | 'Dutch culture' | 'healthcare' | 'housing' | 'work and rights' | 'civic integration' | 'education' | 'finance and taxes';
 type QuestionType = 'open' | 'multiple_choice' | 'fill_blank' | 'true_false';
 
 interface Sentence { id, text, translation }
 interface Paragraph { id, sentences: Sentence[] }
 interface ComprehensionQuestion { id, type: QuestionType, question, answer, options?: string[], correctBool?: boolean }
-interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: ComprehensionQuestion[] }
+interface Story { id, title, level: 'A1' | 'A2' | 'B1' | 'B2', topic, paragraphs: Paragraph[], questions?: ComprehensionQuestion[] }
 ```
 
 ## API Changes
@@ -91,8 +94,10 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: 
 ### `/api/stories` (POST)
 - **Request**: `{ level, topic, existingTitles }`
 - **Response**: `{ story: Story }` (single story, not array)
-- OpenAI prompt generates ≥500 words, 5-6 paragraphs, 4 Q&A
-- Fallback pool: 8 stories covering all 4 topics × 2 levels
+- **Fallback chain**: OpenAI → Groq (free) → procedural generator → static pool
+- OpenAI/Groq prompt generates ≥500 words, 5-6 paragraphs, 4 Q&A, inburgering-focused
+- B1/B2 prompt uses formal Dutch register, civic/institutional scenarios
+- Fallback pool: 8 stories covering all 4 original topics × 2 levels
 
 ### `/api/translate` (POST)
 - **Request**: `{ text, context? }`
@@ -103,13 +108,25 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: 
 
 ## Features Implemented
 
+### Story Generation (Multi-tier)
+1. **OpenAI** (`OPENAI_API_KEY`) — GPT-4o-mini, inburgering-focused prompt
+2. **Groq** (`GROQ_API_KEY`) — llama-3.1-8b-instant, free tier, same prompt
+3. **Procedural generator** — 12 templates (8 original A1/A2 + 4 new B1/B2) × random vars
+4. **Static pool** — 8 pre-written stories (last resort)
+
+### Topics (10 total)
+- Daily Life, Travel, Market, Dutch Culture (original)
+- Healthcare, Housing, Work & Rights, Civic Integration, Education, Finance & Taxes (new)
+
+### Levels (4 total)
+- A1 (beginner), A2 (elementary) — original
+- B1 (intermediate, formal language), B2 (upper-intermediate, exam-level) — new
+
 ### Story Navigation
 - **Next**: Navigates forward in local story cache, or fetches a new unique story if at the end
 - **Previous**: Navigates back in local story cache (no re-fetch)
 - **Story counter**: Shows current position "X / Y" in history
-- **Level**: A1 (beginner) / A2 (elementary) — changing level resets history
-- **Topic**: daily life / travel / market / Dutch culture — changing topic resets history
-- **Repeated stories fix**: All cached story titles passed as `existingTitles` when fetching next
+- **Level/Topic change**: Resets history and fetches fresh story
 
 ### Reading Progress (localStorage)
 - Tracks which sentence IDs have been heard (clicked or played via TTS)
@@ -137,7 +154,8 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: 
 ## Configuration
 
 ### Environment Variables (Optional)
-- `OPENAI_API_KEY`: For AI-generated stories and word translations
+- `OPENAI_API_KEY`: For AI-generated stories and word translations (OpenAI)
+- `GROQ_API_KEY`: For AI-generated stories via Groq free tier (get at https://console.groq.com)
 
 ## Quick Start
 
@@ -158,6 +176,7 @@ bun run dev
 | Feb 2026 | Redesign: single story at a time, topic selector, Q&A, reading progress tracking |
 | Feb 2026 | Varied Q&A types (MC/fill-blank/T-F/open) + Next/Previous navigation with story cache |
 | Feb 2026 | Fix: procedural story generator — infinite unique stories without API key |
+| Feb 2026 | Rebrand to Dutch Inburgering Practice; B1/B2 levels; 6 new topics; Groq free LLM; exam-style prompts |
 
 ## Notes
 
@@ -167,4 +186,6 @@ bun run dev
 - `existingTitles` (all cached story titles) prevents duplicate stories when clicking Next
 - Story history is stored in React state (`storyHistory[]` + `currentIndex`); Previous navigates without re-fetching
 - Each story has 4 questions: 1 multiple_choice + 1 fill_blank + 1 true_false + 1 open
-- Procedural generator uses 8 templates × random vars (24 names, 15 cities, 10 foods, etc.) → effectively infinite unique stories
+- Procedural generator now has 12 templates (8 A1/A2 + 4 B1/B2 inburgering templates)
+- Groq API uses `llama-3.1-8b-instant` model — free tier, no credit card required
+- B1/B2 stories cover: healthcare system, housing/rental law, employment rights, civic integration exam
