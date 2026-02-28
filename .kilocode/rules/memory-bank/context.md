@@ -6,6 +6,12 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — About toggle + footer instructions:**
+  - [x] "About" toggle button added next to the app title in the header
+  - [x] Collapsible About panel: avatar emoji, Sanjay Bhaskar name, ASML, personal motivation text, tag badges
+  - [x] Footer with 4-step "How to Use" guide (pick level/topic → read & listen → look up words → test yourself)
+  - [x] Footer credit line: "Built with ❤️ by Sanjay Bhaskar"
+
 - [x] Base Next.js 16 setup with App Router
 - [x] TypeScript configuration with strict mode
 - [x] Tailwind CSS 4 integration
