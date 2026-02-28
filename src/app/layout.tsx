@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Template",
-  description: "A minimal Next.js starter template",
+  title: "AI Story Reader - Dutch Learning Stories",
+  description: "Learn Dutch with AI-generated A1/A2 level stories with text-to-speech",
 };
 
 export default function RootLayout({

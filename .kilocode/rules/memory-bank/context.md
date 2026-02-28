@@ -1,10 +1,10 @@
-# Active Context: Next.js Starter Template
+# Active Context: AI Story Reader App
 
 ## Current State
 
-**Template Status**: ✅ Ready for development
+**Project Status**: ✅ Complete - AI Story Reader web app built
 
-The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. It's ready for AI-assisted expansion to build any type of application.
+The AI Story Reader app is now fully functional with Dutch learning stories, text-to-speech, and interactive sentence features.
 
 ## Recently Completed
 
@@ -14,74 +14,79 @@ The template is a clean Next.js 16 starter with TypeScript and Tailwind CSS 4. I
 - [x] ESLint configuration
 - [x] Memory bank documentation
 - [x] Recipe system for common features
+- [x] **AI Story Reader app features:**
+  - [x] Story generation API with OpenAI integration (with fallback to default stories)
+  - [x] Level selector (A1/A2)
+  - [x] Refresh Stories button (replace stories)
+  - [x] Add More Stories button (append stories)
+  - [x] Clickable sentences with highlight
+  - [x] Web Speech API for TTS
+  - [x] Translation panel display
+  - [x] Loading states and error handling
+  - [x] Responsive grid layout
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Home page | ✅ Ready |
-| `src/app/layout.tsx` | Root layout | ✅ Ready |
+| `src/app/page.tsx` | Main app component | ✅ Complete |
+| `src/app/layout.tsx` | Root layout | ✅ Updated |
 | `src/app/globals.css` | Global styles | ✅ Ready |
+| `src/app/types/story.ts` | TypeScript types | ✅ Created |
+| `src/app/api/stories/route.ts` | Story generation API | ✅ Created |
+| `src/app/hooks/useSpeech.ts` | TTS hook | ✅ Created |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
-## Current Focus
+## Features Implemented
 
-The template is ready. Next steps depend on user requirements:
+### Story Management
+- **Refresh Stories**: Replaces all current stories with new ones
+- **Add More Stories**: Appends new stories to existing ones
+- **Level Selection**: Toggle between A1 (beginner) and A2 (elementary) Dutch
 
-1. What type of application to build
-2. What features are needed
-3. Design/branding preferences
+### Interactive Sentences
+- Each sentence is clickable
+- Clicking highlights the sentence (blue background)
+- Web Speech API plays Dutch pronunciation
+- Translation panel shows English translation at bottom
+
+### Data
+- Clean JSON structure with Story, Sentence types
+- OpenAI API integration for AI-generated stories
+- Fallback default stories when API unavailable
+
+## Configuration
+
+### Environment Variables (Optional)
+- `OPENAI_API_KEY`: Your OpenAI API key for AI-generated stories
 
 ## Quick Start Guide
 
-### To add a new page:
-
-Create a file at `src/app/[route]/page.tsx`:
-```tsx
-export default function NewPage() {
-  return <div>New page content</div>;
-}
+### To run the app:
+```bash
+bun run dev
 ```
 
-### To add components:
-
-Create `src/components/` directory and add components:
-```tsx
-// src/components/ui/Button.tsx
-export function Button({ children }: { children: React.ReactNode }) {
-  return <button className="px-4 py-2 bg-blue-600 text-white rounded">{children}</button>;
-}
+### To build for production:
+```bash
+bun run build
 ```
-
-### To add a database:
-
-Follow `.kilocode/recipes/add-database.md`
-
-### To add API routes:
-
-Create `src/app/api/[route]/route.ts`:
-```tsx
-import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({ message: "Hello" });
-}
-```
-
-## Available Recipes
-
-| Recipe | File | Use Case |
-|--------|------|----------|
-| Add Database | `.kilocode/recipes/add-database.md` | Data persistence with Drizzle + SQLite |
 
 ## Pending Improvements
 
-- [ ] Add more recipes (auth, email, etc.)
-- [ ] Add example components
-- [ ] Add testing setup recipe
+- [ ] Add more story themes/topics
+- [ ] Add pronunciation speed control
+- [ ] Add bookmark/favorite sentences feature
 
 ## Session History
 
 | Date | Changes |
 |------|---------|
 | Initial | Template created with base setup |
+| Feb 2026 | AI Story Reader app fully implemented |
+
+## Notes
+
+- Default stories are provided as fallback when no OpenAI API key is configured
+- The app works entirely client-side for TTS functionality
+- Stories are displayed in a responsive grid (1 column mobile, 2 tablet, 3 desktop)
