@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Story, Paragraph, Sentence, ComprehensionQuestion, StoryTopic } from '@/app/types/story';
+import { Story, Paragraph, Sentence, ComprehensionQuestion, QuestionType, StoryTopic } from '@/app/types/story';
 
 // Generate a unique ID
 function generateId(): string {
@@ -12,7 +12,13 @@ function generateId(): string {
 // ─────────────────────────────────────────────────────────────────────────────
 type RawSentence = { text: string; translation: string };
 type RawParagraph = { sentences: RawSentence[] };
-type RawQuestion = { question: string; answer: string };
+type RawQuestion = {
+  type: QuestionType;
+  question: string;
+  answer: string;
+  options?: string[];
+  correctBool?: boolean;
+};
 type RawStory = {
   title: string;
   level: 'A1' | 'A2';
@@ -80,10 +86,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Hoe laat staat de persoon op?', answer: 'De persoon staat om zeven uur op.' },
-      { question: 'Hoe gaat de persoon naar zijn werk?', answer: 'De persoon gaat op de fiets naar zijn werk.' },
-      { question: 'Wat eet de persoon voor ontbijt?', answer: 'De persoon eet twee boterhammen met kaas.' },
-      { question: 'Wat doet de persoon na het avondeten?', answer: 'Na het avondeten kijkt de persoon televisie of leest een boek.' },
+      {
+        type: 'multiple_choice',
+        question: 'Hoe laat staat de persoon op?',
+        answer: 'Om zeven uur.',
+        options: ['Om zes uur.', 'Om zeven uur.', 'Om acht uur.', 'Om negen uur.'],
+      },
+      {
+        type: 'true_false',
+        question: 'De persoon gaat met de auto naar zijn werk.',
+        answer: 'Onwaar. De persoon gaat op de fiets naar zijn werk.',
+        correctBool: false,
+      },
+      {
+        type: 'fill_blank',
+        question: 'De persoon eet twee boterhammen met ___ voor ontbijt.',
+        answer: 'kaas',
+      },
+      {
+        type: 'open',
+        question: 'Wat doet de persoon na het avondeten?',
+        answer: 'Na het avondeten kijkt de persoon televisie of leest een boek.',
+      },
     ],
   },
   // ── A1 — Market ──────────────────────────────────────────────────────────────
@@ -142,10 +166,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Wanneer gaat de persoon naar de markt?', answer: 'De persoon gaat elke zaterdag naar de markt.' },
-      { question: 'Waarom gaat de persoon vroeg naar de markt?', answer: 'De persoon gaat vroeg omdat het dan niet zo druk is.' },
-      { question: 'Wat koopt de persoon bij de kaasboer?', answer: 'De persoon koopt een stuk oude kaas en een stuk jonge kaas.' },
-      { question: 'Wat koopt de persoon bij de bakker?', answer: 'De persoon koopt een brood en twee croissants.' },
+      {
+        type: 'multiple_choice',
+        question: 'Wanneer gaat de persoon naar de markt?',
+        answer: 'Elke zaterdag.',
+        options: ['Elke vrijdag.', 'Elke zaterdag.', 'Elke zondag.', 'Elke maandag.'],
+      },
+      {
+        type: 'true_false',
+        question: 'De persoon gaat vroeg naar de markt omdat het dan niet zo druk is.',
+        answer: 'Waar. De persoon gaat vroeg omdat het dan niet zo druk is.',
+        correctBool: true,
+      },
+      {
+        type: 'fill_blank',
+        question: 'Bij de kaasboer koopt de persoon een stuk oude kaas en een stuk ___ kaas.',
+        answer: 'jonge',
+      },
+      {
+        type: 'open',
+        question: 'Wat koopt de persoon bij de bakker?',
+        answer: 'De persoon koopt een brood en twee croissants.',
+      },
     ],
   },
   // ── A1 — Dutch culture ───────────────────────────────────────────────────────
@@ -204,10 +246,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Wanneer is het Sinterklaasfeest?', answer: 'Het Sinterklaasfeest is op vijf december.' },
-      { question: 'Waar komt Sinterklaas vandaan?', answer: 'Sinterklaas komt uit Spanje op een stoomboot.' },
-      { question: 'Wat doen kinderen de avond voor Sinterklaas?', answer: 'Kinderen zetten hun schoen bij de open haard.' },
-      { question: 'Wat zijn typische Sinterklaas-lekkernijen?', answer: 'Typische Sinterklaas-lekkernijen zijn pepernoten en speculaas.' },
+      {
+        type: 'multiple_choice',
+        question: 'Wanneer is het Sinterklaasfeest?',
+        answer: 'Op vijf december.',
+        options: ['Op vijf november.', 'Op vijf december.', 'Op vijfentwintig december.', 'Op zes januari.'],
+      },
+      {
+        type: 'true_false',
+        question: 'Sinterklaas komt uit Engeland op een stoomboot.',
+        answer: 'Onwaar. Sinterklaas komt uit Spanje op een stoomboot.',
+        correctBool: false,
+      },
+      {
+        type: 'fill_blank',
+        question: 'Kinderen zetten hun ___ bij de open haard.',
+        answer: 'schoen',
+      },
+      {
+        type: 'open',
+        question: 'Wat zijn typische Sinterklaas-lekkernijen?',
+        answer: 'Typische Sinterklaas-lekkernijen zijn pepernoten en speculaas.',
+      },
     ],
   },
   // ── A2 — Travel ──────────────────────────────────────────────────────────────
@@ -269,10 +329,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Hoe is de persoon naar Amsterdam gereisd?', answer: 'De persoon heeft de trein genomen vanuit Utrecht.' },
-      { question: 'Welk beroemd schilderij heeft de persoon gezien in het Rijksmuseum?', answer: 'De persoon heeft de Nachtwacht van Rembrandt gezien.' },
-      { question: 'Wat is een kroket?', answer: 'Een kroket is een gefrituurde rol gevuld met ragout, een typisch Nederlands snack.' },
-      { question: 'Waarom staan sommige grachtenpanden scheef?', answer: 'Sommige grachtenpanden staan scheef omdat ze op houten palen staan.' },
+      {
+        type: 'multiple_choice',
+        question: 'Hoe is de persoon naar Amsterdam gereisd?',
+        answer: 'Met de trein vanuit Utrecht.',
+        options: ['Met de bus vanuit Den Haag.', 'Met de trein vanuit Utrecht.', 'Met de auto vanuit Rotterdam.', 'Met de fiets vanuit Haarlem.'],
+      },
+      {
+        type: 'fill_blank',
+        question: 'De persoon heeft de ___ van Rembrandt gezien in het Rijksmuseum.',
+        answer: 'Nachtwacht',
+      },
+      {
+        type: 'true_false',
+        question: 'Een kroket is een typisch Nederlands snack gevuld met ragout.',
+        answer: 'Waar. Een kroket is een gefrituurde rol gevuld met ragout.',
+        correctBool: true,
+      },
+      {
+        type: 'open',
+        question: 'Waarom staan sommige grachtenpanden scheef?',
+        answer: 'Sommige grachtenpanden staan scheef omdat ze op houten palen staan.',
+      },
     ],
   },
   // ── A2 — Dutch culture ───────────────────────────────────────────────────────
@@ -331,10 +409,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Wanneer is Koningsdag?', answer: 'Koningsdag is op 27 april.' },
-      { question: 'Wat is de vrijmarkt?', answer: 'Op de vrijmarkt mogen mensen hun oude spullen verkopen.' },
-      { question: 'Hoe heette het feest vroeger?', answer: 'Vroeger heette het feest Koninginnedag.' },
-      { question: 'Wat doet de Koninklijke Familie op Koningsdag?', answer: 'De Koninklijke Familie bezoekt elk jaar een andere stad en doet mee aan spelletjes en activiteiten.' },
+      {
+        type: 'multiple_choice',
+        question: 'Wanneer is Koningsdag?',
+        answer: 'Op 27 april.',
+        options: ['Op 30 april.', 'Op 27 april.', 'Op 5 mei.', 'Op 15 augustus.'],
+      },
+      {
+        type: 'fill_blank',
+        question: 'Op de vrijmarkt mogen mensen hun oude ___ verkopen.',
+        answer: 'spullen',
+      },
+      {
+        type: 'true_false',
+        question: 'Het feest heette vroeger Koninginnedag.',
+        answer: 'Waar. Vroeger heette het feest Koninginnedag.',
+        correctBool: true,
+      },
+      {
+        type: 'open',
+        question: 'Wat doet de Koninklijke Familie op Koningsdag?',
+        answer: 'De Koninklijke Familie bezoekt elk jaar een andere stad en doet mee aan spelletjes en activiteiten.',
+      },
     ],
   },
   // ── A2 — Market ──────────────────────────────────────────────────────────────
@@ -395,10 +491,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Hoe laat stonden ze op om naar de markt te gaan?', answer: 'Ze stonden om vijf uur op.' },
-      { question: 'Wat verkochten ze op de boerenmarkt?', answer: 'Ze verkochten tomaten, courgettes, sla en aardbeien.' },
-      { question: 'Wat leerde de verteller op de markt?', answer: 'De verteller leerde hoe hij klanten moest helpen, groenten wegen en de prijs uitrekenen.' },
-      { question: 'Hoe laat was de markt voorbij?', answer: 'Om één uur was de markt voorbij.' },
+      {
+        type: 'multiple_choice',
+        question: 'Hoe laat stonden ze op om naar de markt te gaan?',
+        answer: 'Om vijf uur.',
+        options: ['Om drie uur.', 'Om vier uur.', 'Om vijf uur.', 'Om zes uur.'],
+      },
+      {
+        type: 'fill_blank',
+        question: 'Ze verkochten tomaten, courgettes, sla en ___ op de boerenmarkt.',
+        answer: 'aardbeien',
+      },
+      {
+        type: 'true_false',
+        question: 'De markt was om twee uur voorbij.',
+        answer: 'Onwaar. Om één uur was de markt voorbij.',
+        correctBool: false,
+      },
+      {
+        type: 'open',
+        question: 'Wat leerde de verteller op de markt?',
+        answer: 'De verteller leerde hoe hij klanten moest helpen, groenten wegen en de prijs uitrekenen.',
+      },
     ],
   },
   // ── A2 — Daily life ──────────────────────────────────────────────────────────
@@ -459,10 +573,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Waarom begon de persoon met koken leren?', answer: 'De persoon begon met koken leren omdat hij voor het eerst alleen woonde.' },
-      { question: 'Welk gerecht leerde de persoon als eerste?', answer: 'De persoon leerde stamppot maken.' },
-      { question: 'Wat zijn de ingrediënten voor boerenkoolstamppot?', answer: 'Voor boerenkoolstamppot heb je aardappelen, boerenkool, rookworst en spek nodig.' },
-      { question: 'Hoe maakte de persoon de stamppot romig?', answer: 'De persoon voegde boter en melk toe voor een romige structuur.' },
+      {
+        type: 'true_false',
+        question: 'De persoon begon met koken leren omdat hij voor het eerst alleen woonde.',
+        answer: 'Waar. De persoon begon met koken leren omdat hij voor het eerst alleen woonde.',
+        correctBool: true,
+      },
+      {
+        type: 'multiple_choice',
+        question: 'Welk gerecht leerde de persoon als eerste?',
+        answer: 'Stamppot.',
+        options: ['Erwtensoep.', 'Stamppot.', 'Bitterballen.', 'Pannenkoeken.'],
+      },
+      {
+        type: 'fill_blank',
+        question: 'Voor boerenkoolstamppot heb je aardappelen, boerenkool, rookworst en ___ nodig.',
+        answer: 'spek',
+      },
+      {
+        type: 'open',
+        question: 'Hoe maakte de persoon de stamppot romig?',
+        answer: 'De persoon voegde boter en melk toe voor een romige structuur.',
+      },
     ],
   },
   // ── A1 — Travel ──────────────────────────────────────────────────────────────
@@ -523,10 +655,28 @@ const STORY_POOL: RawStory[] = [
       },
     ],
     questions: [
-      { question: 'Waar gaat de persoon naartoe?', answer: 'De persoon gaat naar zijn oma in Rotterdam.' },
-      { question: 'Hoeveel kost het treinkaartje?', answer: 'Het treinkaartje kost acht euro.' },
-      { question: 'Op welk spoor staat de trein?', answer: 'De trein staat op spoor vier.' },
-      { question: 'Hoe lang duurt de treinreis?', answer: 'De treinreis duurt veertig minuten.' },
+      {
+        type: 'multiple_choice',
+        question: 'Waar gaat de persoon naartoe?',
+        answer: 'Naar zijn oma in Rotterdam.',
+        options: ['Naar zijn oma in Amsterdam.', 'Naar zijn oma in Rotterdam.', 'Naar zijn oma in Utrecht.', 'Naar zijn oma in Den Haag.'],
+      },
+      {
+        type: 'fill_blank',
+        question: 'Het treinkaartje kost ___ euro.',
+        answer: 'acht',
+      },
+      {
+        type: 'true_false',
+        question: 'De trein staat op spoor vier.',
+        answer: 'Waar. De trein staat op spoor vier.',
+        correctBool: true,
+      },
+      {
+        type: 'open',
+        question: 'Hoe lang duurt de treinreis?',
+        answer: 'De treinreis duurt veertig minuten.',
+      },
     ],
   },
 ];
@@ -548,8 +698,11 @@ function hydrateStory(raw: RawStory): Story {
     })),
     questions: raw.questions.map((q) => ({
       id: generateId(),
+      type: q.type,
       question: q.question,
       answer: q.answer,
+      ...(q.options ? { options: q.options } : {}),
+      ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
     })),
   };
 }
@@ -624,7 +777,11 @@ Requirements:
 - The story MUST be at least 500 words in Dutch
 - 5 to 6 paragraphs, each with 5 to 8 sentences
 - Each sentence must have an English translation
-- Include 4 comprehension questions with answers in Dutch
+- Include exactly 4 comprehension questions in Dutch, one of each type:
+  1. "multiple_choice" — provide 4 options (one correct), field "options": ["...", "...", "...", "..."]
+  2. "fill_blank" — sentence with ___ for the missing word, field "answer" is the missing word
+  3. "true_false" — a statement that is true or false, field "correctBool": true or false, "answer" explains why
+  4. "open" — open-ended question with a full sentence answer
 - The story should be realistic, engaging, and culturally relevant to the Netherlands
 - ${avoidTitles}
 
@@ -639,7 +796,10 @@ Respond ONLY with valid JSON in this exact format:
     }
   ],
   "questions": [
-    { "question": "Dutch question?", "answer": "Dutch answer." }
+    { "type": "multiple_choice", "question": "Dutch question?", "answer": "Correct option text.", "options": ["Option A.", "Option B.", "Option C.", "Option D."] },
+    { "type": "fill_blank", "question": "Dutch sentence with ___ blank.", "answer": "missing word" },
+    { "type": "true_false", "question": "Dutch statement.", "answer": "Waar/Onwaar. Explanation.", "correctBool": true },
+    { "type": "open", "question": "Dutch question?", "answer": "Full Dutch answer." }
   ]
 }`;
 
@@ -683,10 +843,13 @@ Respond ONLY with valid JSON in this exact format:
           translation: s.translation,
         })),
       })),
-      questions: (parsed.questions || []).map((q: { question: string; answer: string }) => ({
+      questions: (parsed.questions || []).map((q: { type?: string; question: string; answer: string; options?: string[]; correctBool?: boolean }) => ({
         id: generateId(),
+        type: (q.type as QuestionType) || 'open',
         question: q.question,
         answer: q.answer,
+        ...(q.options ? { options: q.options } : {}),
+        ...(q.correctBool !== undefined ? { correctBool: q.correctBool } : {}),
       })),
     };
 

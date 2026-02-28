@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, Q&A, reading progress tracking, TTS, and word translation
+**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, and word translation
 
 ## Recently Completed
 
@@ -26,7 +26,6 @@
   - [x] Word translation API (`/api/translate`) with OpenAI + MyMemory free API fallback
   - [x] **Redesign (Feb 2026) — Single story + Q&A + Progress:**
     - [x] One story displayed at a time (replaced multi-story list)
-    - [x] "New Story" button fetches a fresh story, avoiding already-seen titles
     - [x] Topic selector: daily life, travel, market, Dutch culture
     - [x] Each story includes 4 comprehension questions with reveal-on-click answers
     - [x] Reading progress tracked in localStorage:
@@ -40,6 +39,19 @@
     - [x] Fallback pool: 8 pre-written stories (A1+A2, all 4 topics) each ≥500 words with Q&A
     - [x] Loading spinner during story generation
     - [x] Error state with "Try Again" button
+  - [x] **Update (Feb 2026) — Varied Q&A types + Next/Previous navigation:**
+    - [x] `ComprehensionQuestion` type extended: `type` (open/multiple_choice/fill_blank/true_false), `options?`, `correctBool?`
+    - [x] Each story has 4 questions, one of each type
+    - [x] Multiple choice: 4 options, click to select, auto-reveals answer, correct/wrong feedback
+    - [x] Fill in the blank: sentence with ___, reveal missing word on button click
+    - [x] True/False: statement with Waar/Onwaar reveal + explanation
+    - [x] Open: full-sentence answer revealed on button click
+    - [x] Story history cache: array of fetched stories stored in state
+    - [x] Next button: navigates forward in cache or fetches new unique story
+    - [x] Previous button: navigates back in local cache (no re-fetch)
+    - [x] Story counter: "X / Y" shows position in history
+    - [x] Fixed repeated stories bug: all cached titles passed as `existingTitles`
+    - [x] Level/topic change resets history and fetches fresh story
 
 ## Current Structure
 
@@ -48,8 +60,8 @@
 | `src/app/page.tsx` | Main app: single story, topic selector, Q&A, progress tracking | ✅ Updated |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
-| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story, ComprehensionQuestion, StoryTopic) | ✅ Updated |
-| `src/app/api/stories/route.ts` | Story generation API — single story, topic param, Q&A, 8-story fallback pool | ✅ Updated |
+| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story, ComprehensionQuestion, QuestionType, StoryTopic) | ✅ Updated |
+| `src/app/api/stories/route.ts` | Story generation API — single story, topic param, varied Q&A types, 8-story fallback pool | ✅ Updated |
 | `src/app/api/translate/route.ts` | Word/phrase translation API (OpenAI + MyMemory free API + dictionary fallback) | ✅ Ready |
 | `src/app/hooks/useSpeech.ts` | TTS hook with `playSequence()` and speed support | ✅ Ready |
 | `src/app/lib/tokenize.ts` | Sentence tokenization utility | ✅ Ready |
@@ -59,10 +71,11 @@
 
 ```typescript
 type StoryTopic = 'daily life' | 'travel' | 'market' | 'Dutch culture';
+type QuestionType = 'open' | 'multiple_choice' | 'fill_blank' | 'true_false';
 
 interface Sentence { id, text, translation }
 interface Paragraph { id, sentences: Sentence[] }
-interface ComprehensionQuestion { id, question, answer }
+interface ComprehensionQuestion { id, type: QuestionType, question, answer, options?: string[], correctBool?: boolean }
 interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: ComprehensionQuestion[] }
 ```
 
@@ -84,9 +97,12 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: 
 ## Features Implemented
 
 ### Story Navigation
-- **New Story**: Fetches a fresh story, passes `existingTitles` to avoid repeats
+- **Next**: Navigates forward in local story cache, or fetches a new unique story if at the end
+- **Previous**: Navigates back in local story cache (no re-fetch)
+- **Story counter**: Shows current position "X / Y" in history
 - **Level**: A1 (beginner) / A2 (elementary) — changing level resets history
 - **Topic**: daily life / travel / market / Dutch culture — changing topic resets history
+- **Repeated stories fix**: All cached story titles passed as `existingTitles` when fetching next
 
 ### Reading Progress (localStorage)
 - Tracks which sentence IDs have been heard (clicked or played via TTS)
@@ -97,9 +113,11 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: 
 - Reset progress button
 
 ### Comprehension Q&A
-- 4 questions per story (in Dutch)
-- Click question to reveal/hide answer
-- Answers shown in green below the question
+- 4 questions per story (in Dutch), one of each type:
+  - **Multiple choice**: 4 options, click to select, auto-reveals answer with correct/wrong feedback
+  - **Fill in the blank**: sentence with ___, click "Show Answer" to reveal missing word
+  - **True/False**: statement, click "Show Answer" to reveal Waar/Onwaar + explanation
+  - **Open**: open-ended question, click "Show Answer" to reveal full answer
 
 ### TTS Playback
 - **▶ Play Story** button plays all sentences sequentially
@@ -131,10 +149,13 @@ bun run dev
 | Feb 2026 | Fix: sentence stays highlighted when clicking a word |
 | Feb 2026 | Fix: MyMemory free translation fallback; expanded 12-story fallback pool |
 | Feb 2026 | Redesign: single story at a time, topic selector, Q&A, reading progress tracking |
+| Feb 2026 | Varied Q&A types (MC/fill-blank/T-F/open) + Next/Previous navigation with story cache |
 
 ## Notes
 
 - API now returns `{ story }` (singular) not `{ stories }` (array)
 - Progress is stored in `localStorage` under key `dutch-reader-progress`
 - Fallback pool has 8 stories: 2 per topic (1 A1 + 1 A2 each), all ≥500 words
-- `existingTitles` prevents duplicate stories when clicking "New Story"
+- `existingTitles` (all cached story titles) prevents duplicate stories when clicking Next
+- Story history is stored in React state (`storyHistory[]` + `currentIndex`); Previous navigates without re-fetching
+- Each story has 4 questions: 1 multiple_choice + 1 fill_blank + 1 true_false + 1 open

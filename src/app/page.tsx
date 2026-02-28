@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Story, Sentence, Paragraph, ComprehensionQuestion, StoryTopic } from './types/story';
+import { Story, Sentence, Paragraph, ComprehensionQuestion, StoryTopic, QuestionType } from './types/story';
 import { useSpeech, PlaybackSpeed, SPEED_RATES } from './hooks/useSpeech';
 import { tokenizeSentence, stripPunctuation } from './lib/tokenize';
 
@@ -70,7 +70,13 @@ function getAllSentences(story: Story): Sentence[] {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [story, setStory] = useState<Story | null>(null);
+  // Story history cache: array of fetched stories; currentIndex points to the active one
+  const [storyHistory, setStoryHistory] = useState<Story[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(-1);
+
+  // Derived: current story
+  const story = currentIndex >= 0 ? storyHistory[currentIndex] ?? null : null;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,15 +92,14 @@ export default function Home() {
   // Which sentence id is currently being spoken during story playback
   const [speakingSentenceId, setSpeakingSentenceId] = useState<string | null>(null);
 
-  // Q&A state
+  // Q&A state — keyed by story id so each story has independent answer reveals
   const [revealedAnswers, setRevealedAnswers] = useState<Set<string>>(new Set());
+  // Multiple-choice selected option per question id
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
   // Progress tracking
   const [progress, setProgress] = useState<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
   const progressRef = useRef<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
-
-  // History of shown story titles (to avoid repeats)
-  const [shownTitles, setShownTitles] = useState<string[]>([]);
 
   const { speak, playSequence, stop, isSpeaking, isPlayingStory, isSupported } = useSpeech();
 
@@ -107,6 +112,10 @@ export default function Home() {
 
   // ── Story fetching ──────────────────────────────────────────────────────────
 
+  /**
+   * Fetch a new story and append it to the history.
+   * existingTitles is derived from the current history to avoid repeats.
+   */
   const fetchStory = useCallback(
     async (opts: { level: 'A1' | 'A2'; topic: string; existingTitles: string[] }) => {
       setLoading(true);
@@ -114,6 +123,7 @@ export default function Home() {
       setSelectedSentence(null);
       setSelectedWord(null);
       setRevealedAnswers(new Set());
+      setSelectedOptions({});
       stop();
       setSpeakingSentenceId(null);
 
@@ -139,8 +149,11 @@ export default function Home() {
         }
 
         if (data.story) {
-          setStory(data.story);
-          setShownTitles((prev) => [...prev, data.story.title]);
+          setStoryHistory((prev) => {
+            const next = [...prev, data.story];
+            setCurrentIndex(next.length - 1);
+            return next;
+          });
         }
       } catch (err) {
         setError('Failed to load story. Please try again.');
@@ -303,20 +316,52 @@ export default function Home() {
 
   // ── Navigation handlers ─────────────────────────────────────────────────────
 
-  const handleNewStory = () => {
-    fetchStory({ level, topic, existingTitles: shownTitles });
-  };
+  /** Navigate to the next story: fetch a new one if at the end of history */
+  const handleNext = useCallback(() => {
+    if (currentIndex < storyHistory.length - 1) {
+      // Navigate forward in existing history
+      const nextIdx = currentIndex + 1;
+      setCurrentIndex(nextIdx);
+      setSelectedSentence(null);
+      setSelectedWord(null);
+      setRevealedAnswers(new Set());
+      setSelectedOptions({});
+      stop();
+      setSpeakingSentenceId(null);
+    } else {
+      // Fetch a brand-new story; pass ALL titles in history to avoid repeats
+      const existingTitles = storyHistory.map((s) => s.title);
+      fetchStory({ level, topic, existingTitles });
+    }
+  }, [currentIndex, storyHistory, level, topic, fetchStory, stop]);
+
+  /** Navigate to the previous story from local cache */
+  const handlePrev = useCallback(() => {
+    if (currentIndex <= 0) return;
+    const prevIdx = currentIndex - 1;
+    setCurrentIndex(prevIdx);
+    setSelectedSentence(null);
+    setSelectedWord(null);
+    setRevealedAnswers(new Set());
+    setSelectedOptions({});
+    stop();
+    setSpeakingSentenceId(null);
+  }, [currentIndex, stop]);
 
   const handleLevelChange = (newLevel: 'A1' | 'A2') => {
     setLevel(newLevel);
+    // Reset history when level changes
+    setStoryHistory([]);
+    setCurrentIndex(-1);
     fetchStory({ level: newLevel, topic, existingTitles: [] });
-    setShownTitles([]);
   };
 
   const handleTopicChange = (newTopic: StoryTopic) => {
     setTopic(newTopic);
+    // Reset history when topic changes
+    setStoryHistory([]);
+    setCurrentIndex(-1);
     fetchStory({ level, topic: newTopic, existingTitles: [] });
-    setShownTitles([]);
   };
 
   const handleSpeedChange = (newSpeed: PlaybackSpeed) => {
@@ -335,6 +380,12 @@ export default function Home() {
       }
       return next;
     });
+  };
+
+  const handleSelectOption = (questionId: string, option: string) => {
+    setSelectedOptions((prev) => ({ ...prev, [questionId]: option }));
+    // Auto-reveal answer when an option is selected
+    setRevealedAnswers((prev) => new Set([...prev, questionId]));
   };
 
   // ── Computed ────────────────────────────────────────────────────────────────
@@ -412,15 +463,28 @@ export default function Home() {
               </div>
             </div>
 
-            {/* New story button */}
-            <button
-              onClick={handleNewStory}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <span>🔄</span>
-              New Story
-            </button>
+            {/* Prev / Next navigation */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handlePrev}
+                disabled={loading || currentIndex <= 0}
+                title="Previous story"
+                className="bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:cursor-not-allowed px-3 py-1.5 rounded-l-lg text-sm font-medium transition-colors flex items-center gap-1 border-r border-neutral-600"
+              >
+                ← Prev
+              </button>
+              <span className="bg-neutral-700 px-2 py-1.5 text-xs text-neutral-400 select-none">
+                {storyHistory.length === 0 ? '—' : `${currentIndex + 1} / ${storyHistory.length}`}
+              </span>
+              <button
+                onClick={handleNext}
+                disabled={loading}
+                title="Next story"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-3 py-1.5 rounded-r-lg text-sm font-medium transition-colors flex items-center gap-1"
+              >
+                Next →
+              </button>
+            </div>
 
             {/* Play / Stop */}
             {story && (
@@ -473,7 +537,7 @@ export default function Home() {
                 <p className="font-medium">Error loading story</p>
                 <p className="text-sm mt-1">{error}</p>
                 <button
-                  onClick={handleNewStory}
+                  onClick={handleNext}
                   className="mt-3 bg-red-700 hover:bg-red-600 px-3 py-1.5 rounded text-sm font-medium transition-colors"
                 >
                   Try Again
@@ -566,7 +630,9 @@ export default function Home() {
                         key={q.id}
                         question={q}
                         isRevealed={revealedAnswers.has(q.id)}
+                        selectedOption={selectedOptions[q.id] ?? null}
                         onToggle={() => toggleAnswer(q.id)}
+                        onSelectOption={(opt) => handleSelectOption(q.id, opt)}
                       />
                     ))}
                   </div>
@@ -639,7 +705,7 @@ export default function Home() {
             <p className="text-4xl mb-4">📖</p>
             <p className="text-lg mb-4">No story loaded</p>
             <button
-              onClick={handleNewStory}
+              onClick={handleNext}
               className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-sm font-medium transition-colors text-white"
             >
               Load a Story
@@ -653,23 +719,98 @@ export default function Home() {
 
 // ─── Comprehension Question Card ──────────────────────────────────────────────
 
+const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
+  open: '💬 Open',
+  multiple_choice: '🔘 Multiple Choice',
+  fill_blank: '✏️ Fill in the Blank',
+  true_false: '✅ True / False',
+};
+
 interface QuestionCardProps {
   question: ComprehensionQuestion;
   isRevealed: boolean;
+  selectedOption: string | null;
   onToggle: () => void;
+  onSelectOption: (option: string) => void;
 }
 
-function QuestionCard({ question, isRevealed, onToggle }: QuestionCardProps) {
+function QuestionCard({ question, isRevealed, selectedOption, onToggle, onSelectOption }: QuestionCardProps) {
+  const typeLabel = QUESTION_TYPE_LABELS[question.type] ?? '💬 Open';
+
+  // Determine if the selected option is correct (for multiple_choice)
+  const isCorrect = selectedOption !== null && selectedOption === question.answer;
+  const isWrong = selectedOption !== null && selectedOption !== question.answer;
+
   return (
     <div className="border border-neutral-700 rounded-lg overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full text-left px-4 py-3 flex items-start justify-between gap-3 hover:bg-neutral-700/50 transition-colors"
-      >
-        <p className="text-sm text-neutral-200 leading-relaxed">{question.question}</p>
-        <span className="text-neutral-400 shrink-0 mt-0.5">{isRevealed ? '▲' : '▼'}</span>
-      </button>
-      {isRevealed && (
+      {/* Question header */}
+      <div className="px-4 py-3 bg-neutral-700/30">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <span className="text-xs text-neutral-500 font-medium">{typeLabel}</span>
+            <p className="text-sm text-neutral-200 leading-relaxed mt-1">{question.question}</p>
+          </div>
+          {/* For open / true_false / fill_blank: toggle button */}
+          {question.type !== 'multiple_choice' && (
+            <button
+              onClick={onToggle}
+              className="text-neutral-400 hover:text-white shrink-0 mt-0.5 transition-colors text-xs px-2 py-1 rounded bg-neutral-700 hover:bg-neutral-600"
+            >
+              {isRevealed ? 'Hide' : 'Show Answer'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Multiple choice options */}
+      {question.type === 'multiple_choice' && question.options && (
+        <div className="px-4 py-3 space-y-2">
+          {question.options.map((opt) => {
+            const isSelected = selectedOption === opt;
+            const isThisCorrect = opt === question.answer;
+            let optClass = 'border border-neutral-600 bg-neutral-700/40 text-neutral-200 hover:bg-neutral-700';
+            if (isSelected && isThisCorrect) optClass = 'border border-green-500 bg-green-900/30 text-green-300';
+            else if (isSelected && !isThisCorrect) optClass = 'border border-red-500 bg-red-900/30 text-red-300';
+            else if (!isSelected && isRevealed && isThisCorrect) optClass = 'border border-green-500/50 bg-green-900/20 text-green-400';
+            return (
+              <button
+                key={opt}
+                onClick={() => onSelectOption(opt)}
+                disabled={selectedOption !== null}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${optClass} disabled:cursor-default`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+          {selectedOption && (
+            <p className={`text-xs mt-1 ${isCorrect ? 'text-green-400' : isWrong ? 'text-red-400' : ''}`}>
+              {isCorrect ? '✓ Correct!' : '✗ Not quite. The correct answer is highlighted above.'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Fill in the blank — show answer on toggle */}
+      {question.type === 'fill_blank' && isRevealed && (
+        <div className="px-4 py-3 bg-blue-900/20 border-t border-neutral-700">
+          <p className="text-xs text-neutral-500 mb-1">Missing word:</p>
+          <p className="text-sm text-blue-300 font-medium">{question.answer}</p>
+        </div>
+      )}
+
+      {/* True / False — show answer on toggle */}
+      {question.type === 'true_false' && isRevealed && (
+        <div className="px-4 py-3 bg-yellow-900/20 border-t border-neutral-700">
+          <p className="text-xs text-neutral-500 mb-1">
+            {question.correctBool === true ? '✅ Waar (True)' : question.correctBool === false ? '❌ Onwaar (False)' : 'Answer:'}
+          </p>
+          <p className="text-sm text-yellow-300 leading-relaxed">{question.answer}</p>
+        </div>
+      )}
+
+      {/* Open question — show answer on toggle */}
+      {question.type === 'open' && isRevealed && (
         <div className="px-4 py-3 bg-green-900/20 border-t border-neutral-700">
           <p className="text-xs text-neutral-500 mb-1">Answer:</p>
           <p className="text-sm text-green-400 leading-relaxed">{question.answer}</p>
