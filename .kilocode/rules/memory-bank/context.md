@@ -2,9 +2,9 @@
 
 ## Current State
 
-**Project Status**: ✅ Complete - AI Story Reader web app redesigned with running text paragraphs and side panel
+**Project Status**: ✅ Complete - AI Story Reader with word tokenization, story TTS playback, speed control, and word translation
 
-The AI Story Reader app is fully functional with Dutch learning stories, text-to-speech, interactive sentence features, paragraph-based layout, and a side translation panel.
+The AI Story Reader app is fully functional with Dutch learning stories, text-to-speech, interactive sentence/word features, paragraph-based layout, side translation panel, full story playback, and speed control.
 
 ## Recently Completed
 
@@ -31,17 +31,31 @@ The AI Story Reader app is fully functional with Dutch learning stories, text-to
     - [x] Stories now have 4-6 paragraphs with 4-8 sentences each (500+ words)
     - [x] API accepts `existingTitles` to prevent duplicate stories on "Add More"
     - [x] Longer fallback stories (4 paragraphs each)
+  - [x] **Word tokenization & advanced TTS (Feb 2026):**
+    - [x] Sentences tokenized into clickable word/phrase spans
+    - [x] Click word → look up translation in side panel (with context)
+    - [x] Double-click sentence → select whole sentence
+    - [x] Word translation API (`/api/translate`) with OpenAI + dictionary fallback
+    - [x] Full story TTS playback (▶ Play button per story + Play All in header)
+    - [x] Slow / Normal speed control toggle
+    - [x] Sentence highlight (cyan) during story playback
+    - [x] Word highlight (yellow) when word is selected
+    - [x] Stop button during playback
+    - [x] `playSequence()` in `useSpeech` hook for sequential TTS with callbacks
+    - [x] `tokenizeSentence()` utility in `src/app/lib/tokenize.ts`
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Main app component with side panel layout | ✅ Redesigned |
-| `src/app/layout.tsx` | Root layout | ✅ Updated |
+| `src/app/page.tsx` | Main app component with tokenized text, side panel, playback controls | ✅ Updated |
+| `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
-| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story) | ✅ Updated |
-| `src/app/api/stories/route.ts` | Story generation API with paragraphs + existingTitles | ✅ Updated |
-| `src/app/hooks/useSpeech.ts` | TTS hook | ✅ Unchanged |
+| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story) | ✅ Ready |
+| `src/app/api/stories/route.ts` | Story generation API with paragraphs + existingTitles | ✅ Ready |
+| `src/app/api/translate/route.ts` | Word/phrase translation API (OpenAI + dictionary fallback) | ✅ New |
+| `src/app/hooks/useSpeech.ts` | TTS hook with `playSequence()` and speed support | ✅ Updated |
+| `src/app/lib/tokenize.ts` | Sentence tokenization utility | ✅ New |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Data Model
@@ -62,25 +76,39 @@ interface Story { id, title, level, topic, paragraphs: Paragraph[] }
 ### Running Text Layout
 - Stories rendered as flowing paragraphs (not button lists)
 - Each sentence is an inline `<span>` within a `<p>` tag
-- Clicking a sentence highlights it with yellow background
-- Non-selected sentences show blue hover highlight
+- Sentences tokenized into individual word `<span>` elements
+
+### Word/Sentence Interaction
+- **Click word** → highlights word (yellow), shows translation in side panel, speaks word
+- **Double-click sentence** → highlights sentence, shows full translation, speaks sentence
+- **Sentence highlight**: yellow background when selected, cyan when being spoken during playback
+- **Word highlight**: yellow background when selected
 
 ### Side Translation Panel
 - Desktop (lg+): Sticky right column (w-80)
 - Mobile: Below stories
-- Shows selected Dutch sentence + English translation
+- Shows selected Dutch text (word or sentence) + English translation
+- Shows context sentence for word selections
 - "Speak Again" button to replay TTS
-- Placeholder message when no sentence selected
+- Loading spinner while translating words
+- Placeholder message when nothing selected
 
-### Data
-- Clean JSON structure with Story, Paragraph, Sentence types
-- OpenAI API integration for AI-generated stories (4-6 paragraphs, 500+ words)
-- Fallback default stories with paragraph structure
+### Full Story TTS Playback
+- **▶ Play** button on each story card
+- **▶️ Play All** button in header (plays all stories sequentially)
+- **⏹ Stop** button replaces Play during playback
+- Sentence highlighted in cyan as it's being spoken
+- Speed control: 🐢 Slow (0.6x) / 🐇 Normal (0.9x)
+
+### Word Translation API
+- `/api/translate` POST endpoint
+- Uses OpenAI GPT-4o-mini with context for accurate translations
+- Falls back to built-in Dutch dictionary when no API key
 
 ## Configuration
 
 ### Environment Variables (Optional)
-- `OPENAI_API_KEY`: Your OpenAI API key for AI-generated stories
+- `OPENAI_API_KEY`: Your OpenAI API key for AI-generated stories and word translations
 
 ## Quick Start Guide
 
@@ -97,8 +125,9 @@ bun run build
 ## Pending Improvements
 
 - [ ] Add more story themes/topics
-- [ ] Add pronunciation speed control
+- [ ] Add pronunciation speed control slider (instead of toggle)
 - [ ] Add bookmark/favorite sentences feature
+- [ ] Add word-level boundary highlighting during TTS (requires SpeechSynthesisEvent boundary support)
 
 ## Session History
 
@@ -107,6 +136,7 @@ bun run build
 | Initial | Template created with base setup |
 | Feb 2026 | AI Story Reader app fully implemented |
 | Feb 2026 | Redesign: running text paragraphs, side panel, longer unique stories |
+| Feb 2026 | Word tokenization, story TTS playback, speed control, word translation API |
 
 ## Notes
 
@@ -114,3 +144,4 @@ bun run build
 - The app works entirely client-side for TTS functionality
 - Stories are displayed in a two-column layout on desktop (stories + side panel)
 - `existingTitles` parameter prevents duplicate stories when adding more
+- Word translation uses OpenAI with sentence context for accuracy; falls back to built-in dictionary
