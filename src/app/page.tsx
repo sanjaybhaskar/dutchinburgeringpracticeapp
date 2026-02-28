@@ -76,6 +76,8 @@ function getAllSentences(story: Story): Sentence[] {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Home() {
+  const [aboutOpen, setAboutOpen] = useState(false);
+
   // Story history cache: array of fetched stories; currentIndex points to the active one
   const [storyHistory, setStoryHistory] = useState<Story[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
@@ -410,7 +412,17 @@ export default function Home() {
       {/* Header */}
       <header className="bg-neutral-800 border-b border-neutral-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-center mb-1">🇳🇱 Dutch Inburgering Practice</h1>
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold">🇳🇱 Dutch Inburgering Practice</h1>
+            <button
+              onClick={() => setAboutOpen((v) => !v)}
+              className="text-xs px-2.5 py-1 rounded-full border border-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-400 transition-colors flex items-center gap-1"
+              aria-expanded={aboutOpen}
+            >
+              <span>{aboutOpen ? '▲' : '▼'}</span>
+              About
+            </button>
+          </div>
           <p className="text-xs text-neutral-500 text-center mb-4">Civic integration exam preparation · Reading &amp; comprehension</p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -523,6 +535,48 @@ export default function Home() {
           )}
         </div>
       </header>
+
+      {/* About panel — collapsible */}
+      {aboutOpen && (
+        <div className="bg-neutral-800/80 border-b border-neutral-700 backdrop-blur-sm">
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Avatar / icon */}
+              <div className="shrink-0 flex flex-col items-center gap-2">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg">
+                  👨‍💻
+                </div>
+                <span className="text-xs text-neutral-400 font-medium">Sanjay Bhaskar</span>
+                <span className="text-xs text-neutral-500">ASML</span>
+              </div>
+
+              {/* About text */}
+              <div className="flex-1 space-y-3">
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <span>👋</span> About This App
+                </h2>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Hi! I&apos;m <strong className="text-white">Sanjay Bhaskar</strong>, currently working at{' '}
+                  <strong className="text-blue-400">ASML</strong> in the Netherlands. I built this app primarily
+                  to help myself prepare for the Dutch <em>inburgering</em> (civic integration) exam — and I hope
+                  it can be useful for others on the same journey!
+                </p>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  The app generates Dutch reading texts at different CEFR levels (A1 → B2) across topics
+                  relevant to life in the Netherlands: healthcare, housing, work rights, civic integration, and
+                  more. Each story comes with comprehension questions to test your understanding.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-900/40 text-blue-300 border border-blue-800">🇳🇱 Dutch learner</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-purple-900/40 text-purple-300 border border-purple-800">🏭 ASML engineer</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-900/40 text-green-300 border border-green-800">📚 Inburgering prep</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-orange-900/40 text-orange-300 border border-orange-800">🤝 Open to all</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -724,6 +778,55 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Footer — How to use */}
+      <footer className="bg-neutral-800 border-t border-neutral-700 mt-8">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <h2 className="text-sm font-semibold text-neutral-300 uppercase tracking-wide mb-5 text-center">
+            📖 How to Use This App
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
+              <span className="text-2xl">1️⃣</span>
+              <h3 className="text-sm font-semibold text-white">Pick your level &amp; topic</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Choose a CEFR level (A1–B2) and a topic that interests you. A1/A2 are beginner-friendly;
+                B1/B2 match the actual inburgering exam difficulty.
+              </p>
+            </div>
+            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
+              <span className="text-2xl">2️⃣</span>
+              <h3 className="text-sm font-semibold text-white">Read &amp; listen</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Click any <strong className="text-neutral-300">sentence</strong> to hear it spoken aloud and
+                see its English translation. Use <strong className="text-neutral-300">▶ Play Story</strong> to
+                listen to the whole text with sentence highlighting.
+              </p>
+            </div>
+            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
+              <span className="text-2xl">3️⃣</span>
+              <h3 className="text-sm font-semibold text-white">Look up words</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                After clicking a sentence, click any individual <strong className="text-neutral-300">word</strong>{' '}
+                to get its Dutch → English translation in the side panel. Use{' '}
+                <strong className="text-neutral-300">🐢 Slow</strong> speed if you need more time.
+              </p>
+            </div>
+            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
+              <span className="text-2xl">4️⃣</span>
+              <h3 className="text-sm font-semibold text-white">Test yourself</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Answer the <strong className="text-neutral-300">comprehension questions</strong> at the bottom
+                of each story. Use <strong className="text-neutral-300">Next →</strong> to get a new story and
+                track your reading progress in the sidebar.
+              </p>
+            </div>
+          </div>
+          <p className="text-center text-xs text-neutral-600 mt-6">
+            Built with ❤️ by Sanjay Bhaskar · Dutch Inburgering Practice · {new Date().getFullYear()}
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
