@@ -2,9 +2,24 @@
 
 ## Current State
 
-**Project Status**: ✅ Complete — Dutch civic integration (inburgering) exam practice app with exam-style texts, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, word translation, and multi-tier story generation (OpenAI → Groq free LLM → procedural → static pool)
+**Project Status**: ✅ Complete — Dutch civic integration (inburgering) exam practice app with exam-style texts, 5 multiple-choice Q&A per story, Next/Previous navigation with story cache, reading progress tracking, TTS with always-visible Dutch voice dropdown, word translation, and multi-tier story generation (OpenAI → Groq free LLM → procedural → static pool)
 
 ## Recently Completed
+
+- [x] **Update (Feb 2026) — Voice dropdown always visible + 5 multiple choice Q&A only:**
+  - [x] Voice dropdown now always visible on both mobile and desktop when TTS is supported (`isSupported &&` condition)
+  - [x] Added "🇳🇱 Default Dutch (nl-NL)" as first option in voice dropdown — always present even when no Dutch voice objects are loaded
+  - [x] Selecting "Default Dutch" sets `selectedVoice = null`, which causes utterances to use `lang='nl-NL'` (already the default)
+  - [x] `QuestionType` simplified to only `'multiple_choice'` — removed `'open'`, `'fill_blank'`, `'true_false'`
+  - [x] `ComprehensionQuestion.options` is now required (not optional)
+  - [x] `ComprehensionQuestion.correctBool` removed
+  - [x] All 8 static stories in `STORY_POOL` updated to have 5 multiple choice questions each
+  - [x] All 12 story templates in `STORY_TEMPLATES` updated to have 5 multiple choice questions each
+  - [x] LLM prompt updated to request exactly 5 multiple choice questions (was 4 mixed types)
+  - [x] `parseLLMStory()`, `hydrateStory()`, `generateProceduralStory()` all updated to use `type: 'multiple_choice' as const`
+  - [x] `QuestionCard` component simplified — removed toggle button, fill_blank, true_false, open sections
+  - [x] `QUESTION_TYPE_LABELS` removed from `page.tsx`
+  - [x] `QuestionType` import removed from `page.tsx`
 
 - [x] **Fix (Feb 2026) — Dutch voice dropdown not appearing on mobile:**
   - [x] Root cause: mobile browsers (Chrome on Android, Safari on iOS) return empty array from `getVoices()` on first call; `voiceschanged` event may not fire until user interaction
@@ -237,6 +252,7 @@ bun run dev
 | Feb 2026 | Compact mobile footer: collapsible How-to-Use section, reduced padding/font sizes |
 | Feb 2026 | Play Story resumes from last clicked sentence (lastClickedSentenceIdRef) |
 | Feb 2026 | Fix: Dutch voice dropdown on mobile — retry polling (100/500/1000/2000ms) + fallback message when no Dutch voices found |
+| Feb 2026 | Voice dropdown always visible with "Default Dutch (nl-NL)" option; Q&A changed to 5 multiple choice only |
 
 ## Notes
 
@@ -245,7 +261,7 @@ bun run dev
 - Fallback pool has 8 stories: 2 per topic (1 A1 + 1 A2 each), all ≥500 words
 - `existingTitles` (all cached story titles) prevents duplicate stories when clicking Next
 - Story history is stored in React state (`storyHistory[]` + `currentIndex`); Previous navigates without re-fetching
-- Each story has 4 questions: 1 multiple_choice + 1 fill_blank + 1 true_false + 1 open
+- Each story has 5 questions, all `multiple_choice` type
 - Procedural generator now has 12 templates (8 A1/A2 + 4 B1/B2 inburgering templates)
 - Groq API uses `llama-3.1-8b-instant` model — free tier, no credit card required
 - B1/B2 stories cover: healthcare system, housing/rental law, employment rights, civic integration exam
