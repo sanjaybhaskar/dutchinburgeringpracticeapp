@@ -573,24 +573,28 @@ export default function Home() {
                 </div>
               </div>
               {/* Voice */}
-              {dutchVoices.length > 0 && (
+              {isSupported && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-neutral-400 w-12 shrink-0">Voice:</span>
-                  <select
-                    value={selectedVoice?.name ?? ''}
-                    onChange={(e) => {
-                      const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
-                      setSelectedVoice(v);
-                    }}
-                    className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
-                  >
-                    {dutchVoices.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.name.replace(/Microsoft |Google |Apple /, '')}
-                        {v.localService ? '' : ' ☁️'}
-                      </option>
-                    ))}
-                  </select>
+                  {dutchVoices.length > 0 ? (
+                    <select
+                      value={selectedVoice?.name ?? ''}
+                      onChange={(e) => {
+                        const v = dutchVoices.find((dv) => dv.name === e.target.value) ?? null;
+                        setSelectedVoice(v);
+                      }}
+                      className="flex-1 bg-neutral-700 text-white px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 border border-neutral-600"
+                    >
+                      {dutchVoices.map((v) => (
+                        <option key={v.name} value={v.name}>
+                          {v.name.replace(/Microsoft |Google |Apple /, '')}
+                          {v.localService ? '' : ' ☁️'}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-xs text-neutral-500 italic">No Dutch voices found — using browser default</span>
+                  )}
                 </div>
               )}
             </div>

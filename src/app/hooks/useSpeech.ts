@@ -106,21 +106,29 @@ export function useSpeech() {
 
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
+      if (availableVoices.length > 0) {
+        setVoices(availableVoices);
 
-      // Auto-select best Dutch voice if none selected yet
-      setSelectedVoice((prev) => {
-        if (prev) return prev; // keep user's choice
-        return pickBestDutchVoice(availableVoices);
-      });
+        // Auto-select best Dutch voice if none selected yet
+        setSelectedVoice((prev) => {
+          if (prev) return prev; // keep user's choice
+          return pickBestDutchVoice(availableVoices);
+        });
+      }
     };
 
     loadVoices();
 
-    // Voices may load asynchronously
+    // Voices may load asynchronously (especially on mobile browsers)
     window.speechSynthesis.onvoiceschanged = loadVoices;
 
+    // Mobile browsers (Chrome on Android, Safari on iOS) often delay voice loading.
+    // Poll a few times to catch voices that arrive after the initial render.
+    const retryDelays = [100, 500, 1000, 2000];
+    const timers = retryDelays.map((delay) => setTimeout(loadVoices, delay));
+
     return () => {
+      timers.forEach(clearTimeout);
       window.speechSynthesis.cancel();
     };
   }, []);
