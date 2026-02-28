@@ -6,6 +6,15 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — Mobile translation UX fix (fixed bottom sheet):**
+  - [x] Translation panel no longer placed permanently at the bottom on mobile (avoids scroll-after-every-click problem)
+  - [x] On mobile (`< lg`): translation panel renders as a **fixed bottom sheet** that slides up (`translate-y-0`) when a sentence/word is selected, and slides away (`translate-y-full`) when dismissed
+  - [x] Drag handle bar at top of sheet; tap it (or the × button) to dismiss
+  - [x] Sheet is `max-h-[55vh]` with `overflow-y-auto` so long translations don't cover the whole screen
+  - [x] Main content gets `pb-[55vh]` on mobile when panel is open so the sheet never covers the last sentence
+  - [x] Desktop sidebar (`lg:w-80 lg:sticky`) unchanged — now explicitly `hidden lg:block`
+  - [x] Mobile-only stats panel added below comprehension questions (since sidebar is hidden on mobile)
+
 - [x] **Update (Feb 2026) — About toggle + footer instructions:**
   - [x] "About" toggle button added next to the app title in the header
   - [x] Collapsible About panel: avatar emoji, Sanjay Bhaskar name, ASML, personal motivation text, tag badges

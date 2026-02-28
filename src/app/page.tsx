@@ -408,7 +408,7 @@ export default function Home() {
     : null;
 
   return (
-    <main className="min-h-screen bg-neutral-900 text-white">
+    <main className={`min-h-screen bg-neutral-900 text-white ${selectedSentence ? 'pb-[55vh] lg:pb-0' : ''}`}>
       {/* Header */}
       <header className="bg-neutral-800 border-b border-neutral-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -703,10 +703,51 @@ export default function Home() {
                   </div>
                 </section>
               )}
+
+              {/* Mobile-only stats panel (sidebar is hidden on mobile) */}
+              <div className="lg:hidden bg-neutral-800 rounded-xl p-4 mt-6">
+                <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wide mb-3">
+                  📊 Your Progress
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Stories read</span>
+                    <span className="text-white font-medium">{progress.readStoryTitles.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Sentences heard</span>
+                    <span className="text-white font-medium">{progress.heardSentenceIds.length}</span>
+                  </div>
+                </div>
+                {progress.readStoryTitles.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-neutral-700">
+                    <p className="text-xs text-neutral-500 mb-2">Completed stories:</p>
+                    <ul className="space-y-1">
+                      {progress.readStoryTitles.slice(-5).map((title) => (
+                        <li key={title} className="text-xs text-green-400 flex items-center gap-1">
+                          <span>✓</span>
+                          <span className="truncate">{title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    const reset: ReadingProgress = { readStoryTitles: [], heardSentenceIds: [] };
+                    progressRef.current = reset;
+                    setProgress(reset);
+                    saveProgress(reset);
+                  }}
+                  className="mt-3 w-full text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                >
+                  Reset progress
+                </button>
+              </div>
             </div>
 
-            {/* Side translation panel */}
-            <aside className="lg:w-80 lg:sticky lg:top-24 lg:self-start">
+            {/* Side translation panel — desktop only (sticky sidebar) */}
+            <aside className="hidden lg:block lg:w-80 lg:sticky lg:top-24 lg:self-start">
               <TranslationPanel
                 selectedSentence={selectedSentence}
                 selectedWord={selectedWord}
@@ -777,6 +818,40 @@ export default function Home() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Mobile translation bottom sheet — fixed, slides up when a sentence is selected */}
+      <div
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+          selectedSentence ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        {/* Drag handle + backdrop tap to close */}
+        <div
+          className="bg-neutral-900/60 backdrop-blur-sm h-6 flex items-center justify-center cursor-pointer rounded-t-2xl border-t border-neutral-700"
+          onClick={() => {
+            handleStop();
+            setSelectedSentence(null);
+            setSelectedWord(null);
+          }}
+          aria-label="Close translation panel"
+        >
+          <div className="w-10 h-1 rounded-full bg-neutral-600" />
+        </div>
+        <div className="bg-neutral-800 border-t border-neutral-700 max-h-[55vh] overflow-y-auto">
+          <TranslationPanel
+            selectedSentence={selectedSentence}
+            selectedWord={selectedWord}
+            translatingWord={translatingWord}
+            isSpeaking={isSpeaking}
+            onSpeakAgain={handleSpeakAgain}
+            onClose={() => {
+              handleStop();
+              setSelectedSentence(null);
+              setSelectedWord(null);
+            }}
+          />
+        </div>
       </div>
 
       {/* Footer — How to use */}
