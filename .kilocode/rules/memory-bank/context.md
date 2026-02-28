@@ -2,9 +2,7 @@
 
 ## Current State
 
-**Project Status**: ✅ Complete - AI Story Reader with word tokenization, story TTS playback, speed control, and word translation
-
-The AI Story Reader app is fully functional with Dutch learning stories, text-to-speech, interactive sentence/word features, paragraph-based layout, side translation panel, full story playback, and speed control.
+**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, Q&A, reading progress tracking, TTS, and word translation
 
 ## Recently Completed
 
@@ -17,117 +15,110 @@ The AI Story Reader app is fully functional with Dutch learning stories, text-to
 - [x] **AI Story Reader app features:**
   - [x] Story generation API with OpenAI integration (with fallback to default stories)
   - [x] Level selector (A1/A2)
-  - [x] Refresh Stories button (replace stories)
-  - [x] Add More Stories button (append stories, passes existing titles to avoid duplicates)
   - [x] Clickable sentences with highlight (yellow background when selected)
   - [x] Web Speech API for TTS
   - [x] Side translation panel (desktop: sticky right column; mobile: below stories)
   - [x] Loading states and error handling
-  - [x] **Redesign (Feb 2026):**
-    - [x] Running text paragraph layout (sentences as inline `<span>` elements)
-    - [x] `Paragraph` type added to story data model
-    - [x] `topic` field added to `Story` type
-    - [x] Side translation panel with "Speak Again" button
-    - [x] Stories now have 4-6 paragraphs with 4-8 sentences each (500+ words)
-    - [x] API accepts `existingTitles` to prevent duplicate stories on "Add More"
-    - [x] Longer fallback stories (4 paragraphs each)
-  - [x] **Word tokenization & advanced TTS (Feb 2026):**
-    - [x] Sentences tokenized into clickable word/phrase spans
-    - [x] Click word → look up translation in side panel (with context)
-    - [x] Double-click sentence → select whole sentence
-    - [x] Word translation API (`/api/translate`) with OpenAI + dictionary fallback
-    - [x] Full story TTS playback (▶ Play button per story + Play All in header)
-    - [x] Slow / Normal speed control toggle
-    - [x] Sentence highlight (cyan) during story playback
-    - [x] Word highlight (yellow) when word is selected
-    - [x] Stop button during playback
-    - [x] `playSequence()` in `useSpeech` hook for sequential TTS with callbacks
-    - [x] `tokenizeSentence()` utility in `src/app/lib/tokenize.ts`
+  - [x] Running text paragraph layout (sentences as inline `<span>` elements)
+  - [x] Word tokenization & advanced TTS
+  - [x] Full story TTS playback with sentence highlight during playback
+  - [x] Slow / Normal speed control toggle
+  - [x] Word translation API (`/api/translate`) with OpenAI + MyMemory free API fallback
+  - [x] **Redesign (Feb 2026) — Single story + Q&A + Progress:**
+    - [x] One story displayed at a time (replaced multi-story list)
+    - [x] "New Story" button fetches a fresh story, avoiding already-seen titles
+    - [x] Topic selector: daily life, travel, market, Dutch culture
+    - [x] Each story includes 4 comprehension questions with reveal-on-click answers
+    - [x] Reading progress tracked in localStorage:
+      - Sentences heard (subtly dimmed after being clicked/played)
+      - Stories fully read (all sentences heard)
+      - Progress bar per story (heard/total sentences)
+      - Stats panel in sidebar (stories read count, sentences heard count)
+      - Reset progress button
+    - [x] Stories API returns a single story per request (not an array)
+    - [x] OpenAI prompt: ≥500 words, 5-6 paragraphs, 4 comprehension questions
+    - [x] Fallback pool: 8 pre-written stories (A1+A2, all 4 topics) each ≥500 words with Q&A
+    - [x] Loading spinner during story generation
+    - [x] Error state with "Try Again" button
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Main app component with tokenized text, side panel, playback controls | ✅ Updated |
+| `src/app/page.tsx` | Main app: single story, topic selector, Q&A, progress tracking | ✅ Updated |
 | `src/app/layout.tsx` | Root layout | ✅ Ready |
 | `src/app/globals.css` | Global styles | ✅ Ready |
-| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story) | ✅ Ready |
-| `src/app/api/stories/route.ts` | Story generation API with paragraphs + existingTitles | ✅ Ready |
-| `src/app/api/translate/route.ts` | Word/phrase translation API (OpenAI + dictionary fallback) | ✅ New |
-| `src/app/hooks/useSpeech.ts` | TTS hook with `playSequence()` and speed support | ✅ Updated |
-| `src/app/lib/tokenize.ts` | Sentence tokenization utility | ✅ New |
+| `src/app/types/story.ts` | TypeScript types (Sentence, Paragraph, Story, ComprehensionQuestion, StoryTopic) | ✅ Updated |
+| `src/app/api/stories/route.ts` | Story generation API — single story, topic param, Q&A, 8-story fallback pool | ✅ Updated |
+| `src/app/api/translate/route.ts` | Word/phrase translation API (OpenAI + MyMemory free API + dictionary fallback) | ✅ Ready |
+| `src/app/hooks/useSpeech.ts` | TTS hook with `playSequence()` and speed support | ✅ Ready |
+| `src/app/lib/tokenize.ts` | Sentence tokenization utility | ✅ Ready |
 | `.kilocode/` | AI context & recipes | ✅ Ready |
 
 ## Data Model
 
 ```typescript
+type StoryTopic = 'daily life' | 'travel' | 'market' | 'Dutch culture';
+
 interface Sentence { id, text, translation }
 interface Paragraph { id, sentences: Sentence[] }
-interface Story { id, title, level, topic, paragraphs: Paragraph[] }
+interface ComprehensionQuestion { id, question, answer }
+interface Story { id, title, level, topic, paragraphs: Paragraph[], questions?: ComprehensionQuestion[] }
 ```
+
+## API Changes
+
+### `/api/stories` (POST)
+- **Request**: `{ level, topic, existingTitles }`
+- **Response**: `{ story: Story }` (single story, not array)
+- OpenAI prompt generates ≥500 words, 5-6 paragraphs, 4 Q&A
+- Fallback pool: 8 stories covering all 4 topics × 2 levels
+
+### `/api/translate` (POST)
+- **Request**: `{ text, context? }`
+- **Response**: `{ translation }`
+- Tier 1: Built-in dictionary (~150 common Dutch words)
+- Tier 2: MyMemory free API (no key needed)
+- Tier 3: `[No translation found for "…"]`
 
 ## Features Implemented
 
-### Story Management
-- **Refresh Stories**: Replaces all current stories with new ones
-- **Add More Stories**: Appends new stories, passes `existingTitles` to API to avoid duplicates
-- **Level Selection**: Toggle between A1 (beginner) and A2 (elementary) Dutch
+### Story Navigation
+- **New Story**: Fetches a fresh story, passes `existingTitles` to avoid repeats
+- **Level**: A1 (beginner) / A2 (elementary) — changing level resets history
+- **Topic**: daily life / travel / market / Dutch culture — changing topic resets history
 
-### Running Text Layout
-- Stories rendered as flowing paragraphs (not button lists)
-- Each sentence is an inline `<span>` within a `<p>` tag
-- Sentences tokenized into individual word `<span>` elements
+### Reading Progress (localStorage)
+- Tracks which sentence IDs have been heard (clicked or played via TTS)
+- Tracks which story titles have been fully read (all sentences heard)
+- Progress bar per story showing heard/total sentences
+- Sidebar stats: total stories read, total sentences heard
+- Completed story list (last 5)
+- Reset progress button
 
-### Word/Sentence Interaction
-- **Click word** → highlights word (yellow), shows translation in side panel, speaks word
-- **Double-click sentence** → highlights sentence, shows full translation, speaks sentence
-- **Sentence highlight**: yellow background when selected, cyan when being spoken during playback
-- **Word highlight**: yellow background when selected
+### Comprehension Q&A
+- 4 questions per story (in Dutch)
+- Click question to reveal/hide answer
+- Answers shown in green below the question
 
-### Side Translation Panel
-- Desktop (lg+): Sticky right column (w-80)
-- Mobile: Below stories
-- Shows selected Dutch text (word or sentence) + English translation
-- Shows context sentence for word selections
-- "Speak Again" button to replay TTS
-- Loading spinner while translating words
-- Placeholder message when nothing selected
-
-### Full Story TTS Playback
-- **▶ Play** button on each story card
-- **▶️ Play All** button in header (plays all stories sequentially)
-- **⏹ Stop** button replaces Play during playback
+### TTS Playback
+- **▶ Play Story** button plays all sentences sequentially
+- **⏹ Stop** button during playback
 - Sentence highlighted in cyan as it's being spoken
-- Speed control: 🐢 Slow (0.6x) / 🐇 Normal (0.9x)
-
-### Word Translation API
-- `/api/translate` POST endpoint
-- Uses OpenAI GPT-4o-mini with context for accurate translations
-- Falls back to built-in Dutch dictionary when no API key
+- Speed: 🐢 Slow (0.6x) / 🐇 Normal (0.9x)
+- Click sentence → hear it + show translation
+- Click word → show word translation (sentence stays highlighted)
 
 ## Configuration
 
 ### Environment Variables (Optional)
-- `OPENAI_API_KEY`: Your OpenAI API key for AI-generated stories and word translations
+- `OPENAI_API_KEY`: For AI-generated stories and word translations
 
-## Quick Start Guide
+## Quick Start
 
-### To run the app:
 ```bash
 bun run dev
 ```
-
-### To build for production:
-```bash
-bun run build
-```
-
-## Pending Improvements
-
-- [ ] Add more story themes/topics
-- [ ] Add pronunciation speed control slider (instead of toggle)
-- [ ] Add bookmark/favorite sentences feature
-- [ ] Add word-level boundary highlighting during TTS (requires SpeechSynthesisEvent boundary support)
 
 ## Session History
 
@@ -137,11 +128,13 @@ bun run build
 | Feb 2026 | AI Story Reader app fully implemented |
 | Feb 2026 | Redesign: running text paragraphs, side panel, longer unique stories |
 | Feb 2026 | Word tokenization, story TTS playback, speed control, word translation API |
+| Feb 2026 | Fix: sentence stays highlighted when clicking a word |
+| Feb 2026 | Fix: MyMemory free translation fallback; expanded 12-story fallback pool |
+| Feb 2026 | Redesign: single story at a time, topic selector, Q&A, reading progress tracking |
 
 ## Notes
 
-- Default stories are provided as fallback when no OpenAI API key is configured
-- The app works entirely client-side for TTS functionality
-- Stories are displayed in a two-column layout on desktop (stories + side panel)
-- `existingTitles` parameter prevents duplicate stories when adding more
-- Word translation uses OpenAI with sentence context for accuracy; falls back to built-in dictionary
+- API now returns `{ story }` (singular) not `{ stories }` (array)
+- Progress is stored in `localStorage` under key `dutch-reader-progress`
+- Fallback pool has 8 stories: 2 per topic (1 A1 + 1 A2 each), all ≥500 words
+- `existingTitles` prevents duplicate stories when clicking "New Story"
