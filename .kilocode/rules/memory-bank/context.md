@@ -6,6 +6,13 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — Play Story resumes from last clicked sentence:**
+  - [x] Added `lastClickedSentenceIdRef` (useRef) to track the last sentence the user clicked
+  - [x] `handleSentenceClick` and `handleWordClick` both update `lastClickedSentenceIdRef.current`
+  - [x] `handlePlayStory` now finds the start index from `lastClickedSentenceIdRef`, slices `sentences` and `texts` from that point, and passes the sliced arrays to `playSequence`
+  - [x] `onSentenceStart` callback uses the sliced `slicedSentences[index]` (not the full array) so highlight and progress tracking remain correct
+  - [x] Ref is reset to `null` on new story fetch, Next navigation, and Previous navigation so fresh stories always start from the beginning
+
 - [x] **Update (Feb 2026) — Compact mobile footer with collapsible How-to-Use section:**
   - [x] Footer reduced from `py-8` to `py-3` on mobile (`lg:py-6` on desktop)
   - [x] On mobile: shows only credit line + "📖 How to Use ▼" toggle button
@@ -221,6 +228,7 @@ bun run dev
 | Feb 2026 | Mobile UX: compact header + ⚙️ settings panel; fixed bottom sheet for translation; About toggle |
 | Feb 2026 | Improved TTS: smart voice selection (neural > enhanced > standard), 4 speed options, voice picker UI |
 | Feb 2026 | Compact mobile footer: collapsible How-to-Use section, reduced padding/font sizes |
+| Feb 2026 | Play Story resumes from last clicked sentence (lastClickedSentenceIdRef) |
 
 ## Notes
 

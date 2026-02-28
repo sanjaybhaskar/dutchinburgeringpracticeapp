@@ -111,6 +111,9 @@ export default function Home() {
   const [progress, setProgress] = useState<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
   const progressRef = useRef<ReadingProgress>({ readStoryTitles: [], heardSentenceIds: [] });
 
+  // Track the last sentence the user clicked, so Play Story can resume from there
+  const lastClickedSentenceIdRef = useRef<string | null>(null);
+
   const { speak, playSequence, stop, isSpeaking, isPlayingStory, isSupported, dutchVoices, selectedVoice, setSelectedVoice } = useSpeech();
 
   // Load progress from localStorage on mount
@@ -136,6 +139,7 @@ export default function Home() {
       setSelectedOptions({});
       stop();
       setSpeakingSentenceId(null);
+      lastClickedSentenceIdRef.current = null;
 
       try {
         const response = await fetch('/api/stories', {
@@ -245,6 +249,8 @@ export default function Home() {
       setSelectedWord(null);
       speak(sentence.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
       markSentenceHeard(sentence.id);
+      // Remember this sentence so Play Story can resume from here
+      lastClickedSentenceIdRef.current = sentence.id;
     },
     [stop, speak, speed, markSentenceHeard]
   );
@@ -266,6 +272,8 @@ export default function Home() {
         speak(sentence.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
         markSentenceHeard(sentence.id);
       }
+      // Remember this sentence so Play Story can resume from here
+      lastClickedSentenceIdRef.current = sentence.id;
 
       const wordKey = `${sentence.id}::${word}`;
 
@@ -292,7 +300,15 @@ export default function Home() {
   const handlePlayStory = useCallback(() => {
     if (!story) return;
     const sentences = getAllSentences(story);
-    const texts = sentences.map((s) => s.text);
+
+    // Resume from the last clicked sentence (if any), otherwise start from the beginning
+    const lastId = lastClickedSentenceIdRef.current;
+    const startIndex = lastId
+      ? Math.max(0, sentences.findIndex((s) => s.id === lastId))
+      : 0;
+
+    const slicedSentences = sentences.slice(startIndex);
+    const texts = slicedSentences.map((s) => s.text);
 
     setSelectedSentence(null);
     setSelectedWord(null);
@@ -301,7 +317,7 @@ export default function Home() {
       texts,
       { lang: 'nl-NL', rate: SPEED_RATES[speed] },
       (index) => {
-        const s = sentences[index];
+        const s = slicedSentences[index];
         if (s) {
           setSpeakingSentenceId(s.id);
           markSentenceHeard(s.id);
@@ -338,6 +354,7 @@ export default function Home() {
       setSelectedOptions({});
       stop();
       setSpeakingSentenceId(null);
+      lastClickedSentenceIdRef.current = null;
     } else {
       // Fetch a brand-new story; pass ALL titles in history to avoid repeats
       const existingTitles = storyHistory.map((s) => s.title);
@@ -356,6 +373,7 @@ export default function Home() {
     setSelectedOptions({});
     stop();
     setSpeakingSentenceId(null);
+    lastClickedSentenceIdRef.current = null;
   }, [currentIndex, stop]);
 
   const handleLevelChange = (newLevel: 'A1' | 'A2' | 'B1' | 'B2') => {
