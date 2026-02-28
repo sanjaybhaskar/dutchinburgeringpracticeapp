@@ -6,11 +6,17 @@ export interface Sentence {
   translation: string;
 }
 
+export interface Paragraph {
+  id: string;
+  sentences: Sentence[];
+}
+
 export interface Story {
   id: string;
   title: string;
   level: 'A1' | 'A2';
-  sentences: Sentence[];
+  topic: string;
+  paragraphs: Paragraph[];
 }
 
 export interface StoriesResponse {
@@ -21,6 +27,7 @@ export interface StoriesResponse {
 export interface OpenAIStoryRequest {
   count: number;
   level: 'A1' | 'A2';
+  existingTitles?: string[];
 }
 
 export interface OpenAIStoryResponse {
