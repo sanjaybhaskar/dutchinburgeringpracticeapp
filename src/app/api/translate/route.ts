@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Simple Dutch word/phrase translations for common words (fallback when no API key)
+// Simple Dutch word/phrase translations for common words (instant lookup, no network)
 const commonTranslations: Record<string, string> = {
   // Articles
   de: 'the',
@@ -205,16 +205,45 @@ const commonTranslations: Record<string, string> = {
   tien: 'ten',
 };
 
+/**
+ * Translate using the free MyMemory API (no key required).
+ * Supports up to 5000 chars/day per IP for anonymous requests.
+ */
+async function translateWithMyMemory(text: string): Promise<string | null> {
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=nl|en`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const translated: string | undefined = data?.responseData?.translatedText;
+    // MyMemory returns the original text when it can't translate
+    if (!translated || translated.toLowerCase() === text.toLowerCase()) return null;
+    // Reject responses that look like error messages
+    if (translated.startsWith('PLEASE SELECT')) return null;
+    return translated;
+  } catch {
+    return null;
+  }
+}
+
 async function translateWithOpenAI(text: string, context?: string): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    // Try simple dictionary lookup for single words
+    // 1. Try instant dictionary lookup for single words
     const lower = text.toLowerCase().replace(/[.,!?;:'"]/g, '');
     if (commonTranslations[lower]) {
       return commonTranslations[lower];
     }
-    return `[Translation not available — add OPENAI_API_KEY]`;
+
+    // 2. Try free MyMemory API
+    const myMemoryResult = await translateWithMyMemory(text);
+    if (myMemoryResult) {
+      return myMemoryResult;
+    }
+
+    // 3. Final fallback
+    return `[No translation found for "${text}"]`;
   }
 
   const contextNote = context
