@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, and word translation
+**Project Status**: ✅ Complete — Single-story Dutch reader with topic selector, varied Q&A types, Next/Previous navigation with story cache, reading progress tracking, TTS, word translation, and procedural story generation (no API key needed)
 
 ## Recently Completed
 
@@ -52,6 +52,13 @@
     - [x] Story counter: "X / Y" shows position in history
     - [x] Fixed repeated stories bug: all cached titles passed as `existingTitles`
     - [x] Level/topic change resets history and fetches fresh story
+  - [x] **Update (Feb 2026) — Procedural story generator (no API key needed):**
+    - [x] Added `STORY_TEMPLATES` array: 8 templates (2 per topic × A1/A2) with `{var}` placeholders
+    - [x] Word lists: 24 Dutch names, 15 cities, 10 foods, 10 hobbies, 10 jobs, seasons, months
+    - [x] `generateProceduralStory()` fills templates with random vars, tries 20× for unique title
+    - [x] Titles include variable values (e.g. "Een Dag met Emma", "Een Reis naar Utrecht")
+    - [x] API fallback chain: OpenAI → procedural generator → static pool
+    - [x] Effectively infinite unique stories without any API key
 
 ## Current Structure
 
@@ -150,6 +157,7 @@ bun run dev
 | Feb 2026 | Fix: MyMemory free translation fallback; expanded 12-story fallback pool |
 | Feb 2026 | Redesign: single story at a time, topic selector, Q&A, reading progress tracking |
 | Feb 2026 | Varied Q&A types (MC/fill-blank/T-F/open) + Next/Previous navigation with story cache |
+| Feb 2026 | Fix: procedural story generator — infinite unique stories without API key |
 
 ## Notes
 
@@ -159,3 +167,4 @@ bun run dev
 - `existingTitles` (all cached story titles) prevents duplicate stories when clicking Next
 - Story history is stored in React state (`storyHistory[]` + `currentIndex`); Previous navigates without re-fetching
 - Each story has 4 questions: 1 multiple_choice + 1 fill_blank + 1 true_false + 1 open
+- Procedural generator uses 8 templates × random vars (24 names, 15 cities, 10 foods, etc.) → effectively infinite unique stories
