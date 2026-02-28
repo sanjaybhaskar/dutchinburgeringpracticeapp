@@ -1,24 +1,37 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Story, Sentence, Paragraph } from './types/story';
 import { useSpeech, PlaybackSpeed, SPEED_RATES } from './hooks/useSpeech';
 import { tokenizeSentence, stripPunctuation } from './lib/tokenize';
 
 // ─── Selection types ──────────────────────────────────────────────────────────
 
-type SelectionKind = 'sentence' | 'word';
-
-interface Selection {
-  kind: SelectionKind;
-  /** For sentence: the sentence id. For word: "sentenceId::tokenText" */
+/**
+ * Tracks which sentence is currently selected (highlighted + TTS played).
+ * A sentence is selected by clicking anywhere on it (background or word).
+ */
+interface SelectedSentence {
   id: string;
-  /** The Dutch text that was selected */
   text: string;
-  /** Translation (sentence: from data; word: fetched async) */
+  translation: string;
+}
+
+/**
+ * Tracks which word is currently selected within the selected sentence.
+ * Clicking a word shows its translation in the panel but keeps the sentence highlighted.
+ */
+interface SelectedWord {
+  /** Unique key: `${sentenceId}::${tokenText}` */
+  key: string;
+  /** The sentence this word belongs to */
+  sentenceId: string;
+  /** The Dutch word/token text */
+  text: string;
+  /** The full sentence text (for translation context) */
+  sentenceText: string;
+  /** Translation (fetched async) */
   translation: string | null;
-  /** The full sentence text (for word context) */
-  sentenceText?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -43,12 +56,16 @@ export default function Home() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selection, setSelection] = useState<Selection | null>(null);
+
+  // Two independent selection states
+  const [selectedSentence, setSelectedSentence] = useState<SelectedSentence | null>(null);
+  const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
+  const [translatingWord, setTranslatingWord] = useState(false);
+
   const [level, setLevel] = useState<'A1' | 'A2'>('A1');
   const [speed, setSpeed] = useState<PlaybackSpeed>('normal');
   // Which sentence id is currently being spoken during story playback
   const [speakingSentenceId, setSpeakingSentenceId] = useState<string | null>(null);
-  const [translating, setTranslating] = useState(false);
 
   const { speak, playSequence, stop, isSpeaking, isPlayingStory, isSupported } = useSpeech();
 
@@ -108,52 +125,72 @@ export default function Home() {
 
   // ── Selection handlers ──────────────────────────────────────────────────────
 
+  /**
+   * Clicking a sentence (background, not a word):
+   * - Highlights the sentence
+   * - Plays TTS for the sentence
+   * - Shows sentence translation in the panel
+   * - Clears any word selection
+   */
   const handleSentenceClick = useCallback(
     (sentence: Sentence) => {
       stop();
       setSpeakingSentenceId(null);
-      setSelection({
-        kind: 'sentence',
+      setSelectedSentence({
         id: sentence.id,
         text: sentence.text,
         translation: sentence.translation,
       });
+      setSelectedWord(null);
       speak(sentence.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
     },
     [stop, speak, speed]
   );
 
+  /**
+   * Clicking a word inside a sentence:
+   * - Keeps the sentence highlighted (selects the sentence if not already selected)
+   * - Shows only the word's translation in the panel
+   * - Does NOT play TTS (sentence TTS already played on sentence click)
+   */
   const handleWordClick = useCallback(
-    async (word: string, sentenceId: string, sentenceText: string) => {
+    async (word: string, sentence: Sentence) => {
       const clean = stripPunctuation(word);
       if (!clean) return;
 
-      stop();
-      setSpeakingSentenceId(null);
+      // Select the sentence (highlight it) without playing TTS again if already selected
+      const alreadySelected = selectedSentence?.id === sentence.id;
+      if (!alreadySelected) {
+        stop();
+        setSpeakingSentenceId(null);
+        setSelectedSentence({
+          id: sentence.id,
+          text: sentence.text,
+          translation: sentence.translation,
+        });
+        speak(sentence.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
+      }
 
-      const selId = `${sentenceId}::${word}`;
+      const wordKey = `${sentence.id}::${word}`;
 
-      // Set selection immediately with null translation (loading)
-      setSelection({
-        kind: 'word',
-        id: selId,
+      // Set word selection immediately with null translation (loading)
+      setSelectedWord({
+        key: wordKey,
+        sentenceId: sentence.id,
         text: clean,
+        sentenceText: sentence.text,
         translation: null,
-        sentenceText,
       });
-      setTranslating(true);
-
-      // Speak the word
-      speak(clean, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
+      setTranslatingWord(true);
 
       // Fetch translation async
-      const translation = await fetchWordTranslation(clean, sentenceText);
-      setTranslating(false);
-      setSelection((prev) =>
-        prev?.id === selId ? { ...prev, translation } : prev
+      const translation = await fetchWordTranslation(clean, sentence.text);
+      setTranslatingWord(false);
+      setSelectedWord((prev) =>
+        prev?.key === wordKey ? { ...prev, translation } : prev
       );
     },
-    [stop, speak, speed, fetchWordTranslation]
+    [stop, speak, speed, fetchWordTranslation, selectedSentence]
   );
 
   // ── Story playback ──────────────────────────────────────────────────────────
@@ -163,7 +200,8 @@ export default function Home() {
       const sentences = getAllSentences(story);
       const texts = sentences.map((s) => s.text);
 
-      setSelection(null);
+      setSelectedSentence(null);
+      setSelectedWord(null);
 
       playSequence(
         texts,
@@ -183,7 +221,8 @@ export default function Home() {
     const allSentences = getAllStorySentences(stories);
     const texts = allSentences.map(({ sentence }) => sentence.text);
 
-    setSelection(null);
+    setSelectedSentence(null);
+    setSelectedWord(null);
 
     playSequence(
       texts,
@@ -203,16 +242,17 @@ export default function Home() {
   }, [stop]);
 
   const handleSpeakAgain = useCallback(() => {
-    if (!selection) return;
+    if (!selectedSentence) return;
     stop();
-    speak(selection.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
-  }, [selection, stop, speak, speed]);
+    speak(selectedSentence.text, { lang: 'nl-NL', rate: SPEED_RATES[speed] });
+  }, [selectedSentence, stop, speak, speed]);
 
   // ── Other handlers ──────────────────────────────────────────────────────────
 
   const handleRefresh = () => {
     handleStop();
-    setSelection(null);
+    setSelectedSentence(null);
+    setSelectedWord(null);
     fetchStories(true, []);
   };
 
@@ -223,7 +263,8 @@ export default function Home() {
   const handleLevelChange = (newLevel: 'A1' | 'A2') => {
     handleStop();
     setLevel(newLevel);
-    setSelection(null);
+    setSelectedSentence(null);
+    setSelectedWord(null);
   };
 
   const handleSpeedChange = (newSpeed: PlaybackSpeed) => {
@@ -349,7 +390,8 @@ export default function Home() {
                 <StoryCard
                   key={story.id}
                   story={story}
-                  selection={selection}
+                  selectedSentenceId={selectedSentence?.id ?? null}
+                  selectedWordKey={selectedWord?.key ?? null}
                   speakingSentenceId={speakingSentenceId}
                   isPlayingStory={isPlayingStory}
                   onSentenceClick={handleSentenceClick}
@@ -363,13 +405,15 @@ export default function Home() {
             {/* Side translation panel */}
             <aside className="lg:w-80 lg:sticky lg:top-24 lg:self-start">
               <TranslationPanel
-                selection={selection}
-                translating={translating}
+                selectedSentence={selectedSentence}
+                selectedWord={selectedWord}
+                translatingWord={translatingWord}
                 isSpeaking={isSpeaking}
                 onSpeakAgain={handleSpeakAgain}
                 onClose={() => {
                   handleStop();
-                  setSelection(null);
+                  setSelectedSentence(null);
+                  setSelectedWord(null);
                 }}
               />
             </aside>
@@ -395,27 +439,31 @@ export default function Home() {
 // ─── Translation Side Panel ───────────────────────────────────────────────────
 
 interface TranslationPanelProps {
-  selection: Selection | null;
-  translating: boolean;
+  selectedSentence: SelectedSentence | null;
+  selectedWord: SelectedWord | null;
+  translatingWord: boolean;
   isSpeaking: boolean;
   onSpeakAgain: () => void;
   onClose: () => void;
 }
 
 function TranslationPanel({
-  selection,
-  translating,
+  selectedSentence,
+  selectedWord,
+  translatingWord,
   isSpeaking,
   onSpeakAgain,
   onClose,
 }: TranslationPanelProps) {
+  const hasSelection = selectedSentence !== null;
+
   return (
     <div className="bg-neutral-800 rounded-xl p-6 h-fit">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">
-          {selection?.kind === 'word' ? 'Word / Phrase' : 'Translation'}
+          {selectedWord ? 'Word / Phrase' : 'Translation'}
         </h2>
-        {selection && (
+        {hasSelection && (
           <button
             onClick={onClose}
             className="text-neutral-500 hover:text-white text-xl leading-none transition-colors"
@@ -426,24 +474,22 @@ function TranslationPanel({
         )}
       </div>
 
-      {selection ? (
+      {hasSelection ? (
         <div className="space-y-4">
-          {/* Selected text */}
-          <div>
-            <p className="text-xs text-neutral-500 mb-1">
-              {selection.kind === 'word' ? '🔤 Word / Phrase' : '🇳🇱 Dutch Sentence'}
-            </p>
-            <p className="text-lg font-medium text-white leading-relaxed">
-              {selection.text}
-            </p>
-          </div>
-
-          {/* Context sentence (for word selections) */}
-          {selection.kind === 'word' && selection.sentenceText && (
+          {/* Word section — shown when a word is selected */}
+          {selectedWord ? (
             <div>
-              <p className="text-xs text-neutral-500 mb-1">📖 In context</p>
-              <p className="text-sm text-neutral-300 leading-relaxed italic">
-                {selection.sentenceText}
+              <p className="text-xs text-neutral-500 mb-1">🔤 Word / Phrase</p>
+              <p className="text-lg font-medium text-white leading-relaxed">
+                {selectedWord.text}
+              </p>
+            </div>
+          ) : (
+            /* Sentence section — shown when only a sentence is selected */
+            <div>
+              <p className="text-xs text-neutral-500 mb-1">🇳🇱 Dutch Sentence</p>
+              <p className="text-base font-medium text-white leading-relaxed">
+                {selectedSentence.text}
               </p>
             </div>
           )}
@@ -451,26 +497,41 @@ function TranslationPanel({
           {/* Translation */}
           <div>
             <p className="text-xs text-neutral-500 mb-1">🇬🇧 English</p>
-            {translating ? (
+            {translatingWord ? (
               <div className="flex items-center gap-2 text-neutral-400">
                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-sm">Translating...</span>
               </div>
             ) : (
               <p className="text-lg font-medium text-green-400 leading-relaxed">
-                {selection.translation ?? '—'}
+                {selectedWord
+                  ? (selectedWord.translation ?? '—')
+                  : selectedSentence.translation}
               </p>
             )}
           </div>
 
-          {/* Speak Again */}
+          {/* Context sentence — shown below word translation */}
+          {selectedWord && (
+            <div>
+              <p className="text-xs text-neutral-500 mb-1">📖 In sentence</p>
+              <p className="text-sm text-neutral-300 leading-relaxed italic">
+                {selectedWord.sentenceText}
+              </p>
+              <p className="text-sm text-green-400/70 leading-relaxed italic mt-1">
+                {selectedSentence?.translation}
+              </p>
+            </div>
+          )}
+
+          {/* Speak Again — replays the sentence */}
           <button
             onClick={onSpeakAgain}
             disabled={isSpeaking}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <span>{isSpeaking ? '🔊' : '▶️'}</span>
-            {isSpeaking ? 'Speaking...' : 'Speak Again'}
+            {isSpeaking ? 'Speaking...' : 'Speak Sentence Again'}
           </button>
         </div>
       ) : (
@@ -480,7 +541,7 @@ function TranslationPanel({
             Click any <strong className="text-neutral-300">sentence</strong> to hear it and see its translation.
           </p>
           <p className="text-neutral-500 text-xs mt-2 leading-relaxed">
-            Or click an individual <strong className="text-neutral-400">word</strong> to look it up.
+            Then click an individual <strong className="text-neutral-400">word</strong> to look it up.
           </p>
         </div>
       )}
@@ -492,18 +553,20 @@ function TranslationPanel({
 
 interface StoryCardProps {
   story: Story;
-  selection: Selection | null;
+  selectedSentenceId: string | null;
+  selectedWordKey: string | null;
   speakingSentenceId: string | null;
   isPlayingStory: boolean;
   onSentenceClick: (sentence: Sentence) => void;
-  onWordClick: (word: string, sentenceId: string, sentenceText: string) => void;
+  onWordClick: (word: string, sentence: Sentence) => void;
   onPlayStory: (story: Story) => void;
   onStop: () => void;
 }
 
 function StoryCard({
   story,
-  selection,
+  selectedSentenceId,
+  selectedWordKey,
   speakingSentenceId,
   isPlayingStory,
   onSentenceClick,
@@ -562,7 +625,8 @@ function StoryCard({
           <ParagraphBlock
             key={paragraph.id}
             paragraph={paragraph}
-            selection={selection}
+            selectedSentenceId={selectedSentenceId}
+            selectedWordKey={selectedWordKey}
             speakingSentenceId={speakingSentenceId}
             onSentenceClick={onSentenceClick}
             onWordClick={onWordClick}
@@ -572,8 +636,8 @@ function StoryCard({
 
       {/* Hint */}
       <p className="text-xs text-neutral-500 mt-4">
-        👆 Click a <span className="text-neutral-400">sentence</span> to hear it · Click a{' '}
-        <span className="text-neutral-400">word</span> to look it up
+        👆 Click a <span className="text-neutral-400">sentence</span> to hear it ·{' '}
+        Then click a <span className="text-neutral-400">word</span> to look it up
       </p>
     </article>
   );
@@ -583,15 +647,17 @@ function StoryCard({
 
 interface ParagraphBlockProps {
   paragraph: Paragraph;
-  selection: Selection | null;
+  selectedSentenceId: string | null;
+  selectedWordKey: string | null;
   speakingSentenceId: string | null;
   onSentenceClick: (sentence: Sentence) => void;
-  onWordClick: (word: string, sentenceId: string, sentenceText: string) => void;
+  onWordClick: (word: string, sentence: Sentence) => void;
 }
 
 function ParagraphBlock({
   paragraph,
-  selection,
+  selectedSentenceId,
+  selectedWordKey,
   speakingSentenceId,
   onSentenceClick,
   onWordClick,
@@ -602,7 +668,8 @@ function ParagraphBlock({
         <span key={sentence.id}>
           <SentenceSpan
             sentence={sentence}
-            selection={selection}
+            isSelected={selectedSentenceId === sentence.id}
+            selectedWordKey={selectedWordKey}
             isSpeakingNow={speakingSentenceId === sentence.id}
             onSentenceClick={onSentenceClick}
             onWordClick={onWordClick}
@@ -618,65 +685,67 @@ function ParagraphBlock({
 
 interface SentenceSpanProps {
   sentence: Sentence;
-  selection: Selection | null;
+  isSelected: boolean;
+  selectedWordKey: string | null;
   isSpeakingNow: boolean;
   onSentenceClick: (sentence: Sentence) => void;
-  onWordClick: (word: string, sentenceId: string, sentenceText: string) => void;
+  onWordClick: (word: string, sentence: Sentence) => void;
 }
 
 function SentenceSpan({
   sentence,
-  selection,
+  isSelected,
+  selectedWordKey,
   isSpeakingNow,
   onSentenceClick,
   onWordClick,
 }: SentenceSpanProps) {
-  const isSentenceSelected = selection?.kind === 'sentence' && selection.id === sentence.id;
-  const selectedWordKey =
-    selection?.kind === 'word' && selection.id.startsWith(`${sentence.id}::`)
-      ? selection.id.split('::')[1]
-      : null;
-
   // Tokenize once per render (stable since sentence.text doesn't change)
   const tokens = tokenizeSentence(sentence.id, sentence.text);
 
-  // Sentence-level highlight: yellow if selected, cyan if currently being spoken
+  // Sentence-level highlight: cyan if currently being spoken during playback, yellow if selected
   const sentenceBg = isSpeakingNow
     ? 'bg-cyan-700/60'
-    : isSentenceSelected
+    : isSelected
     ? 'bg-yellow-200/20'
     : '';
 
   return (
     <span
-      className={`rounded px-0.5 transition-colors ${sentenceBg}`}
-      // Double-click or right-click selects the whole sentence
-      onDoubleClick={() => onSentenceClick(sentence)}
+      className={`rounded px-0.5 transition-colors cursor-pointer ${sentenceBg} ${
+        !isSelected && !isSpeakingNow ? 'hover:bg-blue-100/10' : ''
+      }`}
+      // Clicking the sentence span (background) selects the sentence
+      onClick={() => onSentenceClick(sentence)}
     >
       {tokens.map((token) => {
         if (!token.isWord) {
-          // Punctuation / space — render as-is
+          // Punctuation / space — render as-is, not clickable
           return <span key={token.id}>{token.text}</span>;
         }
 
         const clean = stripPunctuation(token.text);
-        const isWordSelected = selectedWordKey === token.text || selectedWordKey === clean;
+        // Check if this specific word token is selected
+        const isWordSelected =
+          selectedWordKey === `${sentence.id}::${token.text}` ||
+          selectedWordKey === `${sentence.id}::${clean}`;
 
         return (
           <span
             key={token.id}
-            className={`cursor-pointer rounded transition-colors ${
+            className={`rounded transition-colors ${
               isWordSelected
                 ? 'bg-yellow-300 text-neutral-900 font-medium'
-                : isSentenceSelected
-                ? 'hover:bg-blue-200/30'
+                : isSelected
+                ? 'hover:bg-blue-200/30 cursor-pointer'
                 : isSpeakingNow
-                ? 'hover:bg-cyan-500/30'
-                : 'hover:bg-blue-100/20'
+                ? 'hover:bg-cyan-500/30 cursor-pointer'
+                : 'hover:bg-blue-100/20 cursor-pointer'
             }`}
             onClick={(e) => {
+              // Stop propagation so the sentence click handler doesn't also fire
               e.stopPropagation();
-              onWordClick(token.text, sentence.id, sentence.text);
+              onWordClick(token.text, sentence);
             }}
             title={`Click to look up "${clean}"`}
           >
