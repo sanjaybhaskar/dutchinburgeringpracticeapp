@@ -6,6 +6,14 @@
 
 ## Recently Completed
 
+- [x] **Update (Feb 2026) — Compact mobile footer with collapsible How-to-Use section:**
+  - [x] Footer reduced from `py-8` to `py-3` on mobile (`lg:py-6` on desktop)
+  - [x] On mobile: shows only credit line + "📖 How to Use ▼" toggle button
+  - [x] Tapping toggle expands/collapses the 4-step instruction grid (`footerOpen` state)
+  - [x] Desktop: full footer always visible, unchanged layout
+  - [x] Card padding reduced (`p-3` vs `p-4`), emoji size reduced (`text-lg` vs `text-2xl`), rounded-lg vs rounded-xl
+  - [x] Instruction text shortened for mobile readability
+
 - [x] **Update (Feb 2026) — Improved TTS quality: smart voice selection + expanded speed options + voice picker:**
   - [x] `useSpeech.ts` — `scoreVoice()` ranks Dutch voices by quality: neural > enhanced > standard; prefers Microsoft Edge neural voices (Colette, Fenna, Maarten), Google, Apple; penalizes compact voices
   - [x] `getDutchVoices()` exported helper — returns all Dutch voices sorted by quality score
@@ -210,6 +218,9 @@ bun run dev
 | Feb 2026 | Varied Q&A types (MC/fill-blank/T-F/open) + Next/Previous navigation with story cache |
 | Feb 2026 | Fix: procedural story generator — infinite unique stories without API key |
 | Feb 2026 | Rebrand to Dutch Inburgering Practice; B1/B2 levels; 6 new topics; Groq free LLM; exam-style prompts |
+| Feb 2026 | Mobile UX: compact header + ⚙️ settings panel; fixed bottom sheet for translation; About toggle |
+| Feb 2026 | Improved TTS: smart voice selection (neural > enhanced > standard), 4 speed options, voice picker UI |
+| Feb 2026 | Compact mobile footer: collapsible How-to-Use section, reduced padding/font sizes |
 
 ## Notes
 
