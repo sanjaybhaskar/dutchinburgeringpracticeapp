@@ -78,6 +78,7 @@ function getAllSentences(story: Story): Sentence[] {
 export default function Home() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [footerOpen, setFooterOpen] = useState(false);
 
   // Story history cache: array of fetched stories; currentIndex points to the active one
   const [storyHistory, setStoryHistory] = useState<Story[]>([]);
@@ -1024,49 +1025,61 @@ export default function Home() {
       </div>
 
       {/* Footer — How to use */}
-      <footer className="bg-neutral-800 border-t border-neutral-700 mt-8">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <h2 className="text-sm font-semibold text-neutral-300 uppercase tracking-wide mb-5 text-center">
+      <footer className="bg-neutral-800 border-t border-neutral-700 mt-6">
+        <div className="max-w-6xl mx-auto px-4 py-3 lg:py-6">
+
+          {/* Mobile: compact toggle row */}
+          <div className="flex items-center justify-between lg:hidden">
+            <p className="text-xs text-neutral-500">
+              Built with ❤️ by Sanjay Bhaskar
+            </p>
+            <button
+              onClick={() => setFooterOpen(o => !o)}
+              className="text-xs text-neutral-400 hover:text-neutral-200 flex items-center gap-1 transition-colors"
+            >
+              📖 How to Use {footerOpen ? '▲' : '▼'}
+            </button>
+          </div>
+
+          {/* Desktop: always-visible heading */}
+          <h2 className="hidden lg:block text-sm font-semibold text-neutral-300 uppercase tracking-wide mb-5 text-center">
             📖 How to Use This App
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
-              <span className="text-2xl">1️⃣</span>
-              <h3 className="text-sm font-semibold text-white">Pick your level &amp; topic</h3>
+
+          {/* 4-step grid — hidden on mobile unless expanded */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 lg:mt-0 ${footerOpen ? 'block' : 'hidden'} lg:grid`}>
+            <div className="bg-neutral-700/40 rounded-lg p-3 flex flex-col gap-1">
+              <span className="text-lg">1️⃣</span>
+              <h3 className="text-xs font-semibold text-white">Pick your level &amp; topic</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Choose a CEFR level (A1–B2) and a topic that interests you. A1/A2 are beginner-friendly;
-                B1/B2 match the actual inburgering exam difficulty.
+                Choose A1–B2 and a topic. A1/A2 are beginner-friendly; B1/B2 match the inburgering exam.
               </p>
             </div>
-            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
-              <span className="text-2xl">2️⃣</span>
-              <h3 className="text-sm font-semibold text-white">Read &amp; listen</h3>
+            <div className="bg-neutral-700/40 rounded-lg p-3 flex flex-col gap-1">
+              <span className="text-lg">2️⃣</span>
+              <h3 className="text-xs font-semibold text-white">Read &amp; listen</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Click any <strong className="text-neutral-300">sentence</strong> to hear it spoken aloud and
-                see its English translation. Use <strong className="text-neutral-300">▶ Play Story</strong> to
-                listen to the whole text with sentence highlighting.
+                Tap a sentence to hear it and see its translation. Use <strong className="text-neutral-300">▶ Play</strong> for full-story playback.
               </p>
             </div>
-            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
-              <span className="text-2xl">3️⃣</span>
-              <h3 className="text-sm font-semibold text-white">Look up words</h3>
+            <div className="bg-neutral-700/40 rounded-lg p-3 flex flex-col gap-1">
+              <span className="text-lg">3️⃣</span>
+              <h3 className="text-xs font-semibold text-white">Look up words</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                After clicking a sentence, click any individual <strong className="text-neutral-300">word</strong>{' '}
-                to get its Dutch → English translation in the side panel. Use{' '}
-                <strong className="text-neutral-300">0.6× or 0.8×</strong> speed if you need more time.
+                Tap any word for a Dutch → English translation. Use 0.6× or 0.8× speed for more time.
               </p>
             </div>
-            <div className="bg-neutral-700/40 rounded-xl p-4 flex flex-col gap-2">
-              <span className="text-2xl">4️⃣</span>
-              <h3 className="text-sm font-semibold text-white">Test yourself</h3>
+            <div className="bg-neutral-700/40 rounded-lg p-3 flex flex-col gap-1">
+              <span className="text-lg">4️⃣</span>
+              <h3 className="text-xs font-semibold text-white">Test yourself</h3>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Answer the <strong className="text-neutral-300">comprehension questions</strong> at the bottom
-                of each story. Use <strong className="text-neutral-300">Next →</strong> to get a new story and
-                track your reading progress in the sidebar.
+                Answer the comprehension questions below each story. Tap <strong className="text-neutral-300">Next →</strong> for a new story.
               </p>
             </div>
           </div>
-          <p className="text-center text-xs text-neutral-600 mt-6">
+
+          {/* Desktop credit line */}
+          <p className="hidden lg:block text-center text-xs text-neutral-600 mt-5">
             Built with ❤️ by Sanjay Bhaskar · Dutch Inburgering Practice · {new Date().getFullYear()}
           </p>
         </div>
