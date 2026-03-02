@@ -253,6 +253,7 @@ bun run dev
 | Feb 2026 | Play Story resumes from last clicked sentence (lastClickedSentenceIdRef) |
 | Feb 2026 | Fix: Dutch voice dropdown on mobile — retry polling (100/500/1000/2000ms) + fallback message when no Dutch voices found |
 | Feb 2026 | Voice dropdown always visible with "Default Dutch (nl-NL)" option; Q&A changed to 5 multiple choice only |
+| Mar 2026 | Added A2 inburgering story "Een Afspraak bij de Huisarts" to STORY_POOL (9 stories total) |
 
 ## Notes
 
