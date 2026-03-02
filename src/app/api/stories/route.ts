@@ -701,6 +701,128 @@ const STORY_POOL: RawStory[] = [
       },
     ],
   },
+  // ── A2 — Daily life (inburgering: healthcare) ────────────────────────────────
+  {
+    title: 'Een Afspraak bij de Huisarts',
+    level: 'A2',
+    topic: 'daily life',
+    paragraphs: [
+      {
+        sentences: [
+          { text: 'In Nederland heeft bijna iedereen een vaste huisarts.', translation: 'In the Netherlands almost everyone has a regular GP.' },
+          { text: 'De huisarts is de eerste dokter die je bezoekt als je ziek bent.', translation: 'The GP is the first doctor you visit when you are ill.' },
+          { text: 'Als je nieuw bent in Nederland, moet je je inschrijven bij een huisartsenpraktijk.', translation: 'If you are new to the Netherlands, you must register at a GP practice.' },
+          { text: 'Je kunt je inschrijven door naar de praktijk te gaan of te bellen.', translation: 'You can register by going to the practice or by calling.' },
+          { text: 'Je hebt je BSN-nummer en je identiteitsbewijs nodig.', translation: 'You need your BSN number and your identity document.' },
+          { text: 'Het BSN is een persoonlijk nummer dat de overheid aan elke inwoner geeft.', translation: 'The BSN is a personal number that the government gives to every resident.' },
+        ],
+      },
+      {
+        sentences: [
+          { text: 'Fatima woont al twee jaar in Nederland.', translation: 'Fatima has been living in the Netherlands for two years.' },
+          { text: 'Vorige week voelde ze zich niet goed.', translation: 'Last week she did not feel well.' },
+          { text: 'Ze had keelpijn en koorts.', translation: 'She had a sore throat and a fever.' },
+          { text: 'Ze belde de huisartsenpraktijk om een afspraak te maken.', translation: 'She called the GP practice to make an appointment.' },
+          { text: 'De assistente vroeg wat er aan de hand was.', translation: 'The assistant asked what was wrong.' },
+          { text: 'Fatima legde haar klachten uit in het Nederlands.', translation: 'Fatima explained her complaints in Dutch.' },
+          { text: 'Ze kreeg een afspraak voor de volgende ochtend om tien uur.', translation: 'She got an appointment for the following morning at ten o\'clock.' },
+        ],
+      },
+      {
+        sentences: [
+          { text: 'De volgende ochtend ging Fatima naar de praktijk.', translation: 'The following morning Fatima went to the practice.' },
+          { text: 'Ze meldde zich aan bij de balie.', translation: 'She checked in at the reception desk.' },
+          { text: 'De assistente vroeg haar naam en geboortedatum.', translation: 'The assistant asked her name and date of birth.' },
+          { text: 'Fatima wachtte in de wachtkamer.', translation: 'Fatima waited in the waiting room.' },
+          { text: 'Er lagen tijdschriften op tafel en er speelde zachte muziek.', translation: 'There were magazines on the table and soft music was playing.' },
+          { text: 'Na tien minuten riep de dokter haar naam.', translation: 'After ten minutes the doctor called her name.' },
+        ],
+      },
+      {
+        sentences: [
+          { text: 'De huisarts heette dokter Van der Berg.', translation: 'The GP was called doctor Van der Berg.' },
+          { text: 'Hij stelde Fatima een paar vragen over haar klachten.', translation: 'He asked Fatima a few questions about her complaints.' },
+          { text: 'Hoe lang had ze al koorts? Had ze ook hoofdpijn?', translation: 'How long had she had a fever? Did she also have a headache?' },
+          { text: 'Daarna bekeek hij haar keel met een lampje.', translation: 'Then he examined her throat with a small light.' },
+          { text: 'Hij luisterde ook naar haar longen met een stethoscoop.', translation: 'He also listened to her lungs with a stethoscope.' },
+          { text: 'De dokter zei dat ze een keelontsteking had.', translation: 'The doctor said she had a throat infection.' },
+          { text: 'Hij schreef een recept voor antibiotica.', translation: 'He wrote a prescription for antibiotics.' },
+        ],
+      },
+      {
+        sentences: [
+          { text: 'Fatima ging met het recept naar de apotheek.', translation: 'Fatima went to the pharmacy with the prescription.' },
+          { text: 'De apotheker legde uit hoe ze de medicijnen moest innemen.', translation: 'The pharmacist explained how she should take the medication.' },
+          { text: 'Ze moest drie keer per dag een tablet nemen, bij voorkeur bij het eten.', translation: 'She had to take one tablet three times a day, preferably with food.' },
+          { text: 'Ze mocht de kuur niet eerder stoppen, ook al voelde ze zich beter.', translation: 'She was not allowed to stop the course early, even if she felt better.' },
+          { text: 'De apotheker gaf haar ook een informatieblad over de bijwerkingen.', translation: 'The pharmacist also gave her an information sheet about the side effects.' },
+        ],
+      },
+      {
+        sentences: [
+          { text: 'Na vijf dagen voelde Fatima zich veel beter.', translation: 'After five days Fatima felt much better.' },
+          { text: 'Ze had de hele antibioticakuur afgemaakt.', translation: 'She had completed the entire course of antibiotics.' },
+          { text: 'Ze was blij dat het Nederlandse zorgsysteem goed werkte.', translation: 'She was glad that the Dutch healthcare system worked well.' },
+          { text: 'In Nederland betaal je een eigen risico voor zorgkosten.', translation: 'In the Netherlands you pay an excess for healthcare costs.' },
+          { text: 'Het eigen risico is elk jaar een vast bedrag.', translation: 'The excess is a fixed amount each year.' },
+          { text: 'Een bezoek aan de huisarts is gratis; je betaalt alleen voor medicijnen en specialisten.', translation: 'A visit to the GP is free; you only pay for medication and specialists.' },
+          { text: 'Fatima was tevreden over haar huisarts en zou hem zeker terugzien als ze weer ziek was.', translation: 'Fatima was satisfied with her GP and would certainly see him again if she was ill again.' },
+        ],
+      },
+    ],
+    questions: [
+      {
+        question: 'Wat moet je doen als je nieuw bent in Nederland en een huisarts wilt?',
+        answer: 'Je moet je inschrijven bij een huisartsenpraktijk.',
+        options: [
+          'Je moet naar het ziekenhuis gaan.',
+          'Je moet je inschrijven bij een huisartsenpraktijk.',
+          'Je moet een verzekering afsluiten.',
+          'Je moet een afspraak maken bij een specialist.',
+        ],
+      },
+      {
+        question: 'Welke klachten had Fatima?',
+        answer: 'Keelpijn en koorts.',
+        options: [
+          'Hoofdpijn en buikpijn.',
+          'Keelpijn en koorts.',
+          'Rugpijn en vermoeidheid.',
+          'Hoesten en kortademigheid.',
+        ],
+      },
+      {
+        question: 'Wat stelde de dokter vast bij Fatima?',
+        answer: 'Een keelontsteking.',
+        options: [
+          'Een longontsteking.',
+          'Een keelontsteking.',
+          'Een griep.',
+          'Een oorontsteking.',
+        ],
+      },
+      {
+        question: 'Hoe vaak per dag moest Fatima de antibiotica innemen?',
+        answer: 'Drie keer per dag.',
+        options: [
+          'Één keer per dag.',
+          'Twee keer per dag.',
+          'Drie keer per dag.',
+          'Vier keer per dag.',
+        ],
+      },
+      {
+        question: 'Wat is het eigen risico in Nederland?',
+        answer: 'Een vast bedrag dat je zelf betaalt voor zorgkosten.',
+        options: [
+          'Een gratis vergoeding van de overheid.',
+          'Een vast bedrag dat je zelf betaalt voor zorgkosten.',
+          'De kosten van een bezoek aan de huisarts.',
+          'Een maandelijkse premie voor de zorgverzekering.',
+        ],
+      },
+    ],
+  },
 ];
 
 // Hydrate a raw story with generated IDs
